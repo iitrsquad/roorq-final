@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offer Letter - [Candidate Name]</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap');
+
+        :root {
+            --bg-color: #f8f8f8;
+            --paper-color: #ffffff;
+            --text-main: #111111;
+            --text-secondary: #555555;
+            --accent-color: #000000;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .page {
+            background: var(--paper-color);
+            width: 100%;
+            max-width: 800px;
+            padding: 80px 90px;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        /* Logo Section */
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        /* "roorq" Logo Style */
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 48px;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            line-height: 1;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .logo::after {
+            content: '.';
+            color: #ff3333;
+        }
+
+        .doc-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        /* Content Typography */
+        p {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            text-align: justify;
+        }
+
+        h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Variable Highlights */
+        .var {
+            color: var(--text-main);
+            font-weight: 600;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+
+        /* Warning/Important Text */
+        .important-note {
+            background-color: #fff5f5;
+            border-left: 3px solid #e53e3e;
+            padding: 20px;
+            font-size: 14px;
+            color: #444;
+            margin: 30px 0;
+        }
+
+        /* Signature Area */
+        .signatures {
+            margin-top: 80px;
+            display: flex;
+            justify-content: space-between;
+            gap: 60px;
+        }
+
+        .sign-box {
+            flex: 1;
+        }
+
+        .sign-line {
+            border-bottom: 1px solid #ddd;
+            height: 40px;
+            margin-bottom: 10px;
+        }
+
+        .sign-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Disclaimer/Footer */
+        .footer-note {
+            margin-top: 60px;
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            line-height: 1.6;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        /* Print Button & Styles */
+        .action-bar {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+        }
+        
+        .btn-download {
+            background: var(--text-main);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                display: block;
+            }
+            .page {
+                box-shadow: none;
+                padding: 40px;
+                max-width: 100%;
+            }
+            .action-bar { display: none; }
+            .var {
+                background: none;
+                padding: 0;
+                border-bottom: 1px dotted #999;
+            }
+            .important-note {
+                background: none;
+                border: 1px solid #ddd;
+            }
+        }
+
+        /* Watermark Style */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 180px;
+            color: rgba(0, 0, 0, 0.08); /* Using RGBA for main text transparency */
+            white-space: nowrap;
+            z-index: 0;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .watermark::after {
+            content: '.';
+            color: rgba(255, 51, 51, 0.2); /* Higher opacity for the red dot to ensure it looks red */
+        }
+        
+        /* Ensure content sits above watermark */
+        .header, p, h2, .important-note, .signatures, .footer-note {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="action-bar no-print">
+        <button onclick="window.print()" class="btn-download">Download PDF</button>
+    </div>
+
+    <div class="page">
+        <!-- Watermark -->
+        <div class="watermark">roorq.</div>
+
+        <div class="header">
+            <div class="logo-container">
+                <div class="logo">roorq</div>
+            </div>
+            <div class="doc-title">Official Employment Offer</div>
+        </div>
+
+        <p>
+            <strong>Date:</strong> <span class="var">5th December , 2025</span><br>
+        </p>
+
+        <p>
+            Dear <span class="var"><b>Zoya Qureshi</b></span>,
+        </p>
+
+        <p>
+            We are delighted to extend this offer of employment for the position of <span class="var">Front End Developer and SEO </span> with <strong>roorq</strong>. We were impressed by your portfolio and dedication, and we are confident that your skills will be invaluable as we continue to grow.
+        </p>
+
+       
+        <h2>Agile Role & Responsibilities</h2>
+        <p>
+            As we are in a critical development phase, your role requires high adaptability. While your primary focus is Front End Development and SEO of the product website along with development, you acknowledge that <strong>you may be required to contribute to other domains</strong> (e.g., backend, design, testing, operations , Public relations) as project needs evolve. We operate as a lean startup, and cross-functional contribution is expected.
+        </p>
+
+        <div class="important-note">
+            <strong>Performance & Termination Policy:</strong><br>
+            Employment with roorq is strictly at-will. Please be advised that <strong>consistent progress and delivery are mandatory</strong>. The company reserves the right to terminate employment immediately if performance benchmarks are not met or if there is a lack of demonstrable progress in your assigned projects. We value results and speed of execution above all else during this development phase.
+        </div>
+
+        <h2>Terms & Conditions</h2>
+        <p>
+            This offer is contingent upon the successful completion of reference checks. You will be eligible for our standard benefits package including working with Founders at office and perks, effective from your start date.
+        </p>
+
+        <p style="margin-top: 40px;">
+            Please indicate your acceptance of this offer by signing below and returning this letter by <span class="var">7th December</span>. We look forward to building something great together.
+        </p>
+
+        <div class="signatures">
+            <div class="sign-box">
+                <div class="sign-line"></div>
+                <div class="sign-label">On Behalf of roorq.</div>
+                <div style="margin-top: 5px; font-weight: 600; font-size: 14px;">Harish Nenawath</div>
+            </div>
+            <div class="sign-box">
+                <div class="sign-line"></div>
+                <div class="sign-label">Candidate Signature</div>
+                <div style="margin-top: 5px; font-weight: 600; font-size: 14px;"><span class="var">Zoya Qureshi</span></div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            <br>roorq. pvt ltd • www.roorq.com<br>
+            Strictly Confidential
+        </div>
+    </div>
+
+</body>
+</html>
