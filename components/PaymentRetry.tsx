@@ -63,8 +63,8 @@ export default function PaymentRetry({ orderId, amount, userName, userEmail, use
         },
         prefill: {
           name: userName || 'Roorq Customer',
-          email: userEmail || 'customer@example.com',
-          contact: userPhone || '9999999999',
+          email: userEmail || '',
+          contact: userPhone || '',
         },
         theme: {
           color: '#000000',
