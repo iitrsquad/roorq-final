@@ -4,7 +4,8 @@ import Footer from '@/components/Footer';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import OrderSuccessConfetti from '@/components/OrderSuccessConfetti';
-import PaymentRetry from '@/components/PaymentRetry';
+// PHASE 1: COD Only - PaymentRetry component commented out
+// import PaymentRetry from '@/components/PaymentRetry';
 import { AlertCircle } from 'lucide-react';
 
 export default async function OrderDetailPage({
@@ -85,11 +86,13 @@ export default async function OrderDetailPage({
 
   const currentStatusIndex = statusSteps.findIndex((s) => s.key === order.status);
 
+  // PHASE 1: COD Only - Payment retry disabled (UPI not available)
   // Check if payment retry is needed
   // Condition: Payment Method is UPI AND Payment Status is Pending/Failed AND Order is NOT Cancelled
-  const showRetry = order.payment_method === 'upi' && 
-                    (order.payment_status === 'pending' || order.payment_status === 'failed') &&
-                    order.status !== 'cancelled';
+  const showRetry = false; // PHASE 1: COD Only - UPI disabled
+  // const showRetry = order.payment_method === 'upi' && 
+  //                   (order.payment_status === 'pending' || order.payment_status === 'failed') &&
+  //                   order.status !== 'cancelled';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -100,7 +103,8 @@ export default async function OrderDetailPage({
 
         <OrderSuccessConfetti />
 
-        {showRetry && (
+        {/* PHASE 1: COD Only - PaymentRetry component commented out */}
+        {/* {showRetry && (
           <PaymentRetry 
             orderId={order.id} 
             amount={order.total_amount}
@@ -108,7 +112,7 @@ export default async function OrderDetailPage({
             userEmail={user.email || ''}
             userPhone={profile?.phone || ''}
           />
-        )}
+        )} */}
 
         {/* Order Status */}
         <div className="bg-gray-50 p-6 rounded-lg mb-8">

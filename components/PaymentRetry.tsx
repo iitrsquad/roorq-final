@@ -1,3 +1,4 @@
+// PHASE 1: COD Only - PaymentRetry component commented out
 'use client'
 
 import { useState } from 'react'
@@ -13,7 +14,18 @@ interface PaymentRetryProps {
   userPhone?: string
 }
 
+// PHASE 1: COD Only - Component disabled
 export default function PaymentRetry({ orderId, amount, userName, userEmail, userPhone }: PaymentRetryProps) {
+  // PHASE 1: COD Only - UPI payment retry disabled
+  return (
+    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded mb-8">
+      <p className="text-sm text-yellow-800">
+        ⚠️ UPI payment is currently disabled. Please use Cash on Delivery (COD) for your orders.
+      </p>
+    </div>
+  );
+
+  /* PHASE 1: COD Only - Razorpay retry code commented out
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -92,4 +104,5 @@ export default function PaymentRetry({ orderId, amount, userName, userEmail, use
       Retry Payment
     </button>
   )
+  */
 }

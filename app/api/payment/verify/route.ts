@@ -1,14 +1,22 @@
+// PHASE 1: COD Only - Razorpay verification route commented out
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import crypto from 'crypto'
+// import crypto from 'crypto'
 
 /**
  * POST /api/payment/verify
  * Verifies Razorpay payment signature and updates order status
  * 
- * CRITICAL: This endpoint handles UPI payment verification
+ * PHASE 1: COD Only - UPI payment verification disabled
  */
 export async function POST(req: NextRequest) {
+  // PHASE 1: COD Only - UPI payment verification disabled
+  return NextResponse.json(
+    { error: 'UPI payment is disabled. Please use Cash on Delivery (COD).' },
+    { status: 403 }
+  );
+
+  /* PHASE 1: COD Only - Rest of Razorpay verification code commented out
   try {
     const supabase = await createClient()
     
@@ -159,5 +167,6 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
+  } */
 }
 

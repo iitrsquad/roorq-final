@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
-import Script from 'next/script';
+// PHASE 1: COD Only - Razorpay script import commented out
+// import Script from 'next/script';
 import { Loader2, ShieldCheck, CreditCard, Banknote, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatINR } from '@/lib/utils/currency';
@@ -20,11 +21,12 @@ interface CartItem {
   };
 }
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+// PHASE 1: COD Only - Razorpay commented out
+// declare global {
+//   interface Window {
+//     Razorpay: any;
+//   }
+// }
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -32,6 +34,7 @@ export default function CheckoutPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  // PHASE 1: COD Only - UPI disabled
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi'>('cod');
   const [formData, setFormData] = useState({
     hostel: '',
@@ -115,91 +118,90 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleRazorpayPayment = async (orderId: string, amount: number) => {
-    try {
-      const res = await fetch('/api/payment/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, orderId }),
-      });
+  // PHASE 1: COD Only - Razorpay payment handler commented out
+  // const handleRazorpayPayment = async (orderId: string, amount: number) => {
+  //   try {
+  //     const res = await fetch('/api/payment/create-order', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ amount, orderId }),
+  //     });
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to initiate payment');
-      }
+  //     if (!res.ok) {
+  //       throw new Error(data.error || 'Failed to initiate payment');
+  //     }
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: data.amount,
-        currency: data.currency,
-        name: 'Roorq',
-        description: 'Order Payment',
-        order_id: data.id,
-        handler: function (response: any) {
-          // Payment success - verify signature on backend
-          fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  orderId: orderId // Internal Order ID
-              })
-            }).then(async (verifyRes) => {
-              if (verifyRes.ok) {
-                  localStorage.removeItem('cart');
-                  toast.success('Payment successful!');
-                  router.push(`/orders/${orderId}?payment=success`);
-              } else {
-                  toast.error('Payment verification failed. Please contact support.');
-                  router.push(`/orders/${orderId}`);
-              }
-            }).catch(err => {
-                console.error("Verify error:", err);
-                toast.error("Network error during verification. Please check your order status.");
-                router.push(`/orders/${orderId}`);
-            });
-        },
-        prefill: {
-          name: userProfile?.full_name || '',
-          email: user?.email || '',
-          contact: formData.phone || '',
-        },
-        notes: {
-          address: `${formData.hostel}, ${formData.roomNumber}`,
-        },
-        theme: {
-          color: '#000000',
-        },
-        modal: {
-          ondismiss: function() {
-            setSubmitting(false);
-            toast('Payment cancelled. Redirecting to order details...', { icon: 'ℹ️' });
-            localStorage.removeItem('cart'); // Cart is converted to order, clear it
-            router.push(`/orders/${orderId}`);
-          }
-        }
-      };
+  //     const options = {
+  //       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  //       amount: data.amount,
+  //       currency: data.currency,
+  //       name: 'Roorq',
+  //       description: 'Order Payment',
+  //       order_id: data.id,
+  //       handler: function (response: any) {
+  //         // Payment success - verify signature on backend
+  //         fetch('/api/payment/verify', {
+  //             method: 'POST',
+  //             headers: { 'Content-Type': 'application/json' },
+  //             body: JSON.stringify({
+  //                 razorpay_order_id: response.razorpay_order_id,
+  //                 razorpay_payment_id: response.razorpay_payment_id,
+  //                 razorpay_signature: response.razorpay_signature,
+  //                 orderId: orderId // Internal Order ID
+  //             })
+  //           }).then(async (verifyRes) => {
+  //             if (verifyRes.ok) {
+  //                 localStorage.removeItem('cart');
+  //                 toast.success('Payment successful!');
+  //                 router.push(`/orders/${orderId}?payment=success`);
+  //             } else {
+  //                 toast.error('Payment verification failed. Please contact support.');
+  //                 router.push(`/orders/${orderId}`);
+  //             }
+  //           }).catch(err => {
+  //               console.error("Verify error:", err);
+  //               toast.error("Network error during verification. Please check your order status.");
+  //               router.push(`/orders/${orderId}`);
+  //           });
+  //       },
+  //       prefill: {
+  //         name: userProfile?.full_name || '',
+  //         email: user?.email || '',
+  //         contact: formData.phone || '',
+  //       },
+  //       notes: {
+  //         address: `${formData.hostel}, ${formData.roomNumber}`,
+  //       },
+  //       theme: {
+  //         color: '#000000',
+  //       },
+  //       modal: {
+  //         ondismiss: function() {
+  //           setSubmitting(false);
+  //           toast('Payment cancelled. Redirecting to order details...', { icon: 'ℹ️' });
+  //           localStorage.removeItem('cart'); // Cart is converted to order, clear it
+  //           router.push(`/orders/${orderId}`);
+  //         }
+  //       }
+  //     };
 
-      const rzp1 = new window.Razorpay(options);
-      rzp1.on('payment.failed', function (response: any) {
-        toast.error(response.error.description || 'Payment failed');
-        setSubmitting(false);
-        localStorage.removeItem('cart');
-        router.push(`/orders/${orderId}`);
-      });
-      rzp1.open();
-    } catch (err: any) {
-        console.error("Razorpay init error:", err);
-        toast.error(err.message || "Failed to start payment. Please try again.");
-        setSubmitting(false);
-        // If we failed *after* creating the order but *before* opening razorpay, we might want to redirect to order page anyway if the order was created successfully in DB? 
-        // The logic below handles order creation first. If that succeeds, we are committed.
-        router.push(`/orders/${orderId}`);
-    }
-  };
+  //     const rzp1 = new window.Razorpay(options);
+  //     rzp1.on('payment.failed', function (response: any) {
+  //       toast.error(response.error.description || 'Payment failed');
+  //       setSubmitting(false);
+  //       localStorage.removeItem('cart');
+  //       router.push(`/orders/${orderId}`);
+  //     });
+  //     rzp1.open();
+  //   } catch (err: any) {
+  //       console.error("Razorpay init error:", err);
+  //       toast.error(err.message || "Failed to start payment. Please try again.");
+  //       setSubmitting(false);
+  //       router.push(`/orders/${orderId}`);
+  //   }
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,16 +305,18 @@ export default function CheckoutPage() {
           });
       }
 
-      if (paymentMethod === 'cod') {
+      // PHASE 1: COD Only - Always use COD
+      // if (paymentMethod === 'cod') {
         // Clear cart and redirect
         await supabase.from('orders').update({ status: 'placed' }).eq('id', order.id);
         
         localStorage.removeItem('cart');
         router.push(`/orders/${order.id}`);
-      } else {
-        // Initiate UPI Payment
-        await handleRazorpayPayment(order.id, total);
-      }
+      // } else {
+      //   // PHASE 1: UPI Payment disabled
+      //   // Initiate UPI Payment
+      //   await handleRazorpayPayment(order.id, total);
+      // }
 
     } catch (error: any) {
       console.error('Checkout error:', error);
@@ -325,7 +329,8 @@ export default function CheckoutPage() {
     return sum + (item.product?.price || 0) * item.quantity;
   }, 0);
 
-  const showUPI = userProfile?.first_cod_done === true;
+  // PHASE 1: COD Only - UPI disabled
+  const showUPI = false; // userProfile?.first_cod_done === true;
 
   if (loading) {
     return (
@@ -355,7 +360,8 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      {/* PHASE 1: COD Only - Razorpay script commented out */}
+      {/* <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" /> */}
       
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <h1 className="text-4xl font-black uppercase tracking-tighter mb-8">Checkout</h1>
@@ -442,7 +448,8 @@ export default function CheckoutPage() {
                   </div>
                 </label>
 
-                <label 
+                {/* PHASE 1: COD Only - UPI payment option commented out */}
+                {/* <label 
                   className={`flex items-start p-4 border-2 transition-all ${
                     !showUPI 
                       ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed' 
@@ -474,7 +481,7 @@ export default function CheckoutPage() {
                         : 'Instant payment via UPI apps (GPay, PhonePe, Paytm).'}
                     </div>
                   </div>
-                </label>
+                </label> */}
               </div>
             </div>
           </div>
@@ -513,7 +520,7 @@ export default function CheckoutPage() {
                     <Loader2 className="w-5 h-5 animate-spin" /> Processing...
                   </>
                 ) : (
-                  paymentMethod === 'upi' ? 'Pay Now' : 'Place Order'
+                  'Place Order' // PHASE 1: COD Only - Always "Place Order"
                 )}
               </button>
               
