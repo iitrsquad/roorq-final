@@ -26,7 +26,7 @@ export const organizationSchema = {
   '@type': 'Organization',
   name: 'Roorq',
   url: absoluteUrl('/'),
-  logo: absoluteUrl('/roorq-hero.png'),
+  logo: absoluteUrl('/roorq-final7.png'),
   sameAs: [],
 }
 
@@ -101,7 +101,7 @@ export const articleSchema = (input: {
     name: 'Roorq',
     logo: {
       '@type': 'ImageObject',
-      url: absoluteUrl('/roorq-hero.png'),
+      url: absoluteUrl('/roorq-final7.png'),
     },
   },
 })
