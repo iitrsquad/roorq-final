@@ -44,14 +44,26 @@ interface OrderStatusProps {
   message?: string;
 }
 
-export const OrderStatusEmail = ({ orderNumber, status, message }: OrderStatusProps) => (
+const statusLabelMap: Record<string, string> = {
+  pending: 'Pending',
+  confirmed: 'Packed',
+  out_for_delivery: 'Dispatched',
+  delivered: 'Delivered',
+  payment_collected: 'Payment Collected',
+  cancelled: 'Cancelled',
+};
+
+export const OrderStatusEmail = ({ orderNumber, status, message }: OrderStatusProps) => {
+  const label = statusLabelMap[status] ?? status.replace(/_/g, ' ');
+
+  return (
   <Html>
     <Head />
     <Preview>Update on Order {orderNumber}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={heading}>
-          Order {status.replace(/_/g, ' ')}
+          Order {label}
         </Heading>
         
         <Text style={text}>
@@ -60,7 +72,7 @@ export const OrderStatusEmail = ({ orderNumber, status, message }: OrderStatusPr
 
         <Section style={{ backgroundColor: '#f5f5f5', padding: '20px', borderLeft: '4px solid #000' }}>
           <Text style={{ ...text, margin: 0, fontWeight: 'bold', textTransform: 'uppercase' }}>
-            Current Status: {status.replace(/_/g, ' ')}
+            Current Status: {label}
           </Text>
         </Section>
 
@@ -77,6 +89,7 @@ export const OrderStatusEmail = ({ orderNumber, status, message }: OrderStatusPr
       </Container>
     </Body>
   </Html>
-);
+  );
+};
 
 export default OrderStatusEmail;

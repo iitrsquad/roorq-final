@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
-// PHASE 1: COD Only - Razorpay script import commented out
-// import Script from 'next/script';
 import { Loader2, ShieldCheck, CreditCard, Banknote, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatINR } from '@/lib/utils/currency';
+import { logger } from '@/lib/logger';
+import { getOrCreateCsrfToken } from '@/lib/auth/csrf-client';
 
 interface CartItem {
   productId: string;
@@ -21,21 +22,52 @@ interface CartItem {
   };
 }
 
-// PHASE 1: COD Only - Razorpay commented out
-// declare global {
-//   interface Window {
-//     Razorpay: any;
-//   }
-// }
+type UserProfile = {
+  full_name: string | null;
+  hostel: string | null;
+  room_number: string | null;
+  phone: string | null;
+  first_cod_done?: boolean | null;
+};
+
+type CheckoutItemPayload = {
+  productId: string;
+  quantity: number;
+};
+
+type CheckoutRequest = {
+  items: CheckoutItemPayload[];
+  deliveryHostel: string;
+  deliveryRoom: string;
+  phone: string;
+  paymentMethod: 'cod' | 'upi' | 'card';
+  csrf: string;
+};
+
+type CheckoutSuccessResponse = {
+  orderId: string;
+  orderNumber: string;
+  totalAmount: number;
+};
+
+type CheckoutErrorResponse = {
+  error: string;
+  details?: string[];
+};
+
+const isCheckoutSuccess = (
+  data: CheckoutSuccessResponse | CheckoutErrorResponse
+): data is CheckoutSuccessResponse => "orderId" in data;
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [user, setUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   // PHASE 1: COD Only - UPI disabled
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi'>('cod');
+  const [csrfToken, setCsrfToken] = useState('');
   const [formData, setFormData] = useState({
     hostel: '',
     roomNumber: '',
@@ -43,36 +75,32 @@ export default function CheckoutPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       
       if (authError) throw authError;
       
-      if (!user) {
+      if (!authUser) {
         router.push('/auth?redirect=/checkout');
         return;
       }
 
-      setUser(user);
+      setUser(authUser);
 
       // Load user profile
       const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .single();
 
       if (profileError) {
-          console.error("Profile load error:", profileError);
+          logger.error('Profile load error', profileError instanceof Error ? profileError : undefined);
           // Don't block, just don't prefill
       }
 
@@ -93,115 +121,46 @@ export default function CheckoutPage() {
           return;
       }
 
-      const products = await Promise.all(
-        cartData.map(async (item: CartItem) => {
-          const { data, error } = await supabase
-            .from('products')
-            .select('id, name, price')
-            .eq('id', item.productId)
-            .single();
-          
-          if (error) {
-              console.error(`Failed to load product ${item.productId}:`, error);
-              return null;
-          }
-          return { ...item, product: data };
-        })
+      const productIds = Array.from(
+        new Set(cartData.map((item: CartItem) => item.productId))
       );
 
-      setCart(products.filter((p): p is CartItem => !!p && !!p.product));
-    } catch (err: any) {
-        console.error("Checkout load error:", err);
-        setError("Failed to load checkout data. Please try refreshing the page.");
+      const { data: productRows, error: productsError } = await supabase
+        .from('products')
+        .select('id, name, price')
+        .in('id', productIds);
+
+      if (productsError) {
+        logger.error('Failed to load products', productsError instanceof Error ? productsError : undefined);
+      }
+
+      const productMap = new Map(
+        (productRows ?? []).map((product) => [product.id, product])
+      );
+
+      const merged = cartData
+        .map((item: CartItem) => ({
+          ...item,
+          product: productMap.get(item.productId),
+        }))
+        .filter((item: CartItem) => !!item.product);
+
+      setCart(merged);
+    } catch (err: unknown) {
+        logger.error('Checkout load error', err instanceof Error ? err : undefined);
+        setError('Failed to load checkout data. Please try refreshing the page.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, supabase]);
 
-  // PHASE 1: COD Only - Razorpay payment handler commented out
-  // const handleRazorpayPayment = async (orderId: string, amount: number) => {
-  //   try {
-  //     const res = await fetch('/api/payment/create-order', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ amount, orderId }),
-  //     });
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  //     const data = await res.json();
-
-  //     if (!res.ok) {
-  //       throw new Error(data.error || 'Failed to initiate payment');
-  //     }
-
-  //     const options = {
-  //       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-  //       amount: data.amount,
-  //       currency: data.currency,
-  //       name: 'Roorq',
-  //       description: 'Order Payment',
-  //       order_id: data.id,
-  //       handler: function (response: any) {
-  //         // Payment success - verify signature on backend
-  //         fetch('/api/payment/verify', {
-  //             method: 'POST',
-  //             headers: { 'Content-Type': 'application/json' },
-  //             body: JSON.stringify({
-  //                 razorpay_order_id: response.razorpay_order_id,
-  //                 razorpay_payment_id: response.razorpay_payment_id,
-  //                 razorpay_signature: response.razorpay_signature,
-  //                 orderId: orderId // Internal Order ID
-  //             })
-  //           }).then(async (verifyRes) => {
-  //             if (verifyRes.ok) {
-  //                 localStorage.removeItem('cart');
-  //                 toast.success('Payment successful!');
-  //                 router.push(`/orders/${orderId}?payment=success`);
-  //             } else {
-  //                 toast.error('Payment verification failed. Please contact support.');
-  //                 router.push(`/orders/${orderId}`);
-  //             }
-  //           }).catch(err => {
-  //               console.error("Verify error:", err);
-  //               toast.error("Network error during verification. Please check your order status.");
-  //               router.push(`/orders/${orderId}`);
-  //           });
-  //       },
-  //       prefill: {
-  //         name: userProfile?.full_name || '',
-  //         email: user?.email || '',
-  //         contact: formData.phone || '',
-  //       },
-  //       notes: {
-  //         address: `${formData.hostel}, ${formData.roomNumber}`,
-  //       },
-  //       theme: {
-  //         color: '#000000',
-  //       },
-  //       modal: {
-  //         ondismiss: function() {
-  //           setSubmitting(false);
-  //           toast('Payment cancelled. Redirecting to order details...', { icon: 'ℹ️' });
-  //           localStorage.removeItem('cart'); // Cart is converted to order, clear it
-  //           router.push(`/orders/${orderId}`);
-  //         }
-  //       }
-  //     };
-
-  //     const rzp1 = new window.Razorpay(options);
-  //     rzp1.on('payment.failed', function (response: any) {
-  //       toast.error(response.error.description || 'Payment failed');
-  //       setSubmitting(false);
-  //       localStorage.removeItem('cart');
-  //       router.push(`/orders/${orderId}`);
-  //     });
-  //     rzp1.open();
-  //   } catch (err: any) {
-  //       console.error("Razorpay init error:", err);
-  //       toast.error(err.message || "Failed to start payment. Please try again.");
-  //       setSubmitting(false);
-  //       router.push(`/orders/${orderId}`);
-  //   }
-  // };
+  useEffect(() => {
+    setCsrfToken(getOrCreateCsrfToken());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,115 +171,57 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!user) {
+      toast.error('Please sign in to continue.');
+      router.push('/auth?redirect=/checkout');
+      return;
+    }
+
+    if (!csrfToken) {
+      toast.error('Security token missing. Please refresh.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // Update user profile
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          hostel: formData.hostel,
-          room_number: formData.roomNumber,
-          phone: formData.phone,
-        })
-        .eq('id', user.id);
-        
-      if (updateError) {
-          console.warn("Failed to update profile address:", updateError);
-          // Continue execution, not critical blocking
+      const payload: CheckoutRequest = {
+        items: cart.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+        deliveryHostel: formData.hostel.trim(),
+        deliveryRoom: formData.roomNumber.trim(),
+        phone: formData.phone.trim(),
+        paymentMethod,
+        csrf: csrfToken,
+      };
+
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = (await response.json()) as CheckoutSuccessResponse | CheckoutErrorResponse;
+
+      if (!response.ok) {
+        const message = 'error' in data ? data.error : 'Failed to place order.';
+        toast.error(message);
+        setSubmitting(false);
+        return;
       }
 
-      // Calculate total
-      const total = cart.reduce((sum, item) => {
-        return sum + (item.product?.price || 0) * item.quantity;
-      }, 0);
-
-      // Get current drop
-      const { data: currentDrop } = await supabase
-        .from('drops')
-        .select('id')
-        .eq('status', 'live')
-        .single();
-
-      // Create order
-      const orderNumber = `ROORQ-${Date.now()}`;
-      
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          drop_id: currentDrop?.id || null,
-          order_number: orderNumber,
-          status: 'reserved', // Start as reserved to hold stock
-          payment_method: paymentMethod,
-          payment_status: 'pending',
-          total_amount: total,
-          delivery_hostel: formData.hostel,
-          delivery_room: formData.roomNumber,
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items and reserve inventory
-      for (const item of cart) {
-        // Create order item
-        const { error: itemError } = await supabase
-          .from('order_items')
-          .insert({
-            order_id: order.id,
-            product_id: item.productId,
-            quantity: item.quantity,
-            price: item.product?.price || 0,
-          });
-          
-        if (itemError) {
-            // Critical error: partial order created. Ideally rollback (Supabase doesn't support cross-table transactions easily in client)
-            // For now, throw and let user retry or contact support.
-            throw new Error(`Failed to add item ${item.product?.name} to order.`);
-        }
-
-        // Reserve inventory (atomic update)
-        const { error: reserveError } = await supabase.rpc('reserve_inventory', {
-          p_product_id: item.productId,
-          p_quantity: item.quantity,
-        });
-
-        if (reserveError) {
-          throw new Error(`Failed to reserve inventory for ${item.product?.name}: ${reserveError.message}`);
-        }
-
-        // Create inventory reservation
-        const expiresAt = new Date();
-        expiresAt.setMinutes(expiresAt.getMinutes() + 10);
-
-        await supabase
-          .from('inventory_reservations')
-          .insert({
-            product_id: item.productId,
-            user_id: user.id,
-            quantity: item.quantity,
-            expires_at: expiresAt.toISOString(),
-          });
+      if (!isCheckoutSuccess(data)) {
+        throw new Error('Invalid checkout response');
       }
 
-      // PHASE 1: COD Only - Always use COD
-      // if (paymentMethod === 'cod') {
-        // Clear cart and redirect
-        await supabase.from('orders').update({ status: 'placed' }).eq('id', order.id);
-        
-        localStorage.removeItem('cart');
-        router.push(`/orders/${order.id}`);
-      // } else {
-      //   // PHASE 1: UPI Payment disabled
-      //   // Initiate UPI Payment
-      //   await handleRazorpayPayment(order.id, total);
-      // }
-
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      toast.error(error.message || 'Failed to place order. Please try again.');
+      localStorage.removeItem('cart');
+      window.dispatchEvent(new Event('cartUpdated'));
+      router.push(`/orders/${data.orderId}`);
+    } catch (error: unknown) {
+      logger.error('Checkout error', error instanceof Error ? error : undefined);
+      toast.error('Failed to place order. Please try again.');
       setSubmitting(false);
     }
   };
@@ -360,9 +261,6 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
-      {/* PHASE 1: COD Only - Razorpay script commented out */}
-      {/* <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" /> */}
-      
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <h1 className="text-4xl font-black uppercase tracking-tighter mb-8">Checkout</h1>
 
@@ -477,7 +375,7 @@ export default function CheckoutPage() {
                         : paymentMethod === 'upi' ? 'text-gray-300' : 'text-gray-500'
                     }`}>
                       {!showUPI 
-                        ? '🔒 Unlocks after your first successful COD delivery.' 
+                        ? 'dY" Unlocks after your first successful COD delivery.' 
                         : 'Instant payment via UPI apps (GPay, PhonePe, Paytm).'}
                     </div>
                   </div>
@@ -512,7 +410,7 @@ export default function CheckoutPage() {
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !csrfToken}
                 className="w-full bg-black text-white py-4 font-black uppercase tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {submitting ? (
@@ -525,7 +423,7 @@ export default function CheckoutPage() {
               </button>
               
               <p className="text-center text-[10px] text-gray-400 mt-4 uppercase font-bold tracking-widest">
-                Secure Checkout • 24h Delivery
+                Secure Checkout ??? 24h Delivery
               </p>
             </div>
           </div>

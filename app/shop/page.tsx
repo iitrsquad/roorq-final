@@ -2,7 +2,18 @@ import { createClient } from '@/lib/supabase/server';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
+import StructuredData from '@/components/StructuredData';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { breadcrumbSchema, collectionSchema } from '@/lib/seo/schema';
 import { Filter, ChevronDown } from 'lucide-react';
+import { logger } from '@/lib/logger';
+
+export const metadata = buildMetadata({
+  title: 'Shop',
+  description: 'Shop the latest weekly drops and vintage pieces curated for IIT Roorkee.',
+  path: '/shop',
+  keywords: ['shop', 'weekly drops', 'vintage', 'IIT Roorkee'],
+});
 
 export default async function ShopPage({
   searchParams,
@@ -50,7 +61,7 @@ export default async function ShopPage({
   const { data: products, error } = await query;
 
   if (error) {
-    console.error('Error fetching products:', error);
+    logger.error('Error fetching products', error instanceof Error ? error : undefined);
     // Graceful fallback: Show empty state instead of crashing
   }
 
@@ -67,6 +78,19 @@ export default async function ShopPage({
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
+      <StructuredData
+        data={[
+          collectionSchema({
+            title: 'Roorq Shop',
+            description: 'Weekly drops and vintage fashion curated for IIT Roorkee.',
+            path: '/shop',
+          }),
+          breadcrumbSchema([
+            { name: 'Home', path: '/' },
+            { name: 'Shop', path: '/shop' },
+          ]),
+        ]}
+      />
       <Navbar />
       
       {/* Header / Banner */}

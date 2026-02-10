@@ -1,27 +1,47 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Copy, Check, Gift, Share2, ExternalLink, Clock, AlertCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
+
+type UserProfile = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  referral_code: string | null;
+};
+
+type Referral = {
+  id: string;
+  status: 'pending' | 'eligible' | 'claimed' | string;
+  created_at: string;
+  reward_category?: string | null;
+  invitee_id?: string | null;
+};
+
+type ReferralReward = {
+  id: string;
+  status: 'available' | 'claimed' | 'expired' | string;
+  category: string;
+  created_at: string;
+};
 
 export default function ReferralsPage() {
-  const [user, setUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [referrals, setReferrals] = useState<any[]>([]);
-  const [rewards, setRewards] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [rewards, setRewards] = useState<ReferralReward[]>([]);
   const [copied, setCopied] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -41,16 +61,16 @@ export default function ReferralsPage() {
         .single();
 
       if (profileError) throw profileError;
-      setUserProfile(profile);
+      setUserProfile(profile as UserProfile);
 
       const { data: refs, error: refsError } = await supabase
         .from('referrals')
-        .select(`*, invitee:users!referrals_invitee_id_fkey(email, full_name)`)
+        .select('*')
         .eq('referrer_id', user.id)
         .order('created_at', { ascending: false });
 
       if (refsError) throw refsError;
-      setReferrals(refs || []);
+      setReferrals((refs || []) as Referral[]);
 
       const { data: rewardData, error: rewardsError } = await supabase
         .from('referral_rewards')
@@ -59,18 +79,27 @@ export default function ReferralsPage() {
         .order('created_at', { ascending: false });
 
       if (rewardsError) throw rewardsError;
-      setRewards(rewardData || []);
+      setRewards((rewardData || []) as ReferralReward[]);
 
-    } catch (err: any) {
-      console.error('Error loading referrals:', err);
+    } catch (err: unknown) {
+      logger.error('Error loading referrals', err instanceof Error ? err : undefined);
       setError('Failed to load referral data. Please try refreshing.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const copyReferralLink = () => {
-    const link = `${window.location.origin}/signup?ref=${userProfile?.referral_code}`;
+    const code = userProfile?.referral_code ?? '';
+    if (!code) {
+      setError('Referral code is not ready yet. Please refresh the page.');
+      return;
+    }
+    const link = `${window.location.origin}/signup?ref=${code}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -120,7 +149,13 @@ export default function ReferralsPage() {
                 </p>
                 
                 <button 
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => {
+                    if (!userProfile?.referral_code) {
+                      setError('Referral code is not ready yet. Please refresh the page.');
+                      return;
+                    }
+                    setIsModalOpen(true);
+                  }}
                   className="inline-flex items-center gap-3 bg-white text-black px-8 py-4 text-sm font-black uppercase tracking-widest hover:bg-gray-200 transition transform hover:scale-105"
                 >
                   Generate Referral Link <Share2 className="w-4 h-4" />
@@ -178,9 +213,12 @@ export default function ReferralsPage() {
                         <p className="font-black uppercase text-lg">Free {reward.category}</p>
                         <p className="text-xs text-gray-500 uppercase tracking-wider">Earned from referral</p>
                       </div>
-                      <button className="bg-black text-white px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition">
-                        Add to Next Order
-                      </button>
+                      <a
+                        href="/contact?topic=referral-reward"
+                        className="bg-black text-white px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition"
+                      >
+                        Claim Reward
+                      </a>
                     </div>
                   ))}
                 </div>
@@ -195,7 +233,11 @@ export default function ReferralsPage() {
                   {referrals.map((referral) => (
                     <div key={referral.id} className="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition">
                       <div>
-                        <p className="font-bold text-sm">{referral.invitee?.email?.split('@')[0] || 'Unknown User'}</p>
+                        <p className="font-bold text-sm">
+                          {referral.invitee_id
+                            ? `Invitee #${referral.invitee_id.slice(0, 6).toUpperCase()}`
+                            : 'Unknown User'}
+                        </p>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wider">
                           {new Date(referral.created_at).toLocaleDateString()}
                         </p>

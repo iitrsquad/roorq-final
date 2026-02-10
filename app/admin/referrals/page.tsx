@@ -1,6 +1,28 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import AdminNav from '@/components/AdminNav';
+
+type ReferralUser = {
+  email: string | null;
+  full_name: string | null;
+};
+
+type ReferralRow = {
+  id: string;
+  status: 'pending' | 'eligible' | 'claimed' | string;
+  reward_category?: string | null;
+  created_at: string;
+  referrer?: ReferralUser | null;
+  invitee?: ReferralUser | null;
+};
+
+type RewardRow = {
+  id: string;
+  category: string;
+  status: 'available' | 'claimed' | 'expired' | string;
+  created_at: string;
+  user?: ReferralUser | null;
+  product?: { name: string | null } | null;
+};
 
 export default async function AdminReferralsPage() {
   const supabase = await createClient();
@@ -30,11 +52,8 @@ export default async function AdminReferralsPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-4xl font-bold mb-8">Referrals & Rewards</h1>
+    <div>
+      <h1 className="text-4xl font-bold mb-8">Referrals & Rewards</h1>
 
         {/* Referrals */}
         <div className="bg-white rounded-lg shadow mb-8">
@@ -54,7 +73,7 @@ export default async function AdminReferralsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {referrals && referrals.length > 0 ? (
-                  referrals.map((referral: any) => (
+                  (referrals as ReferralRow[]).map((referral) => (
                     <tr key={referral.id}>
                       <td className="px-6 py-4">{referral.referrer?.email || 'N/A'}</td>
                       <td className="px-6 py-4">{referral.invitee?.email || 'N/A'}</td>
@@ -99,7 +118,7 @@ export default async function AdminReferralsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {rewards && rewards.length > 0 ? (
-                  rewards.map((reward: any) => (
+                  (rewards as RewardRow[]).map((reward) => (
                     <tr key={reward.id}>
                       <td className="px-6 py-4">{reward.user?.email || 'N/A'}</td>
                       <td className="px-6 py-4">{reward.category}</td>
@@ -125,8 +144,6 @@ export default async function AdminReferralsPage() {
             </table>
           </div>
         </div>
-      </div>
     </div>
   );
 }
-

@@ -2,6 +2,16 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import StructuredData from '@/components/StructuredData';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { breadcrumbSchema, collectionSchema } from '@/lib/seo/schema';
+
+export const metadata = buildMetadata({
+  title: 'Drops',
+  description: 'Weekly drops and curated collections from Roorq.',
+  path: '/drops',
+  keywords: ['drops', 'weekly collections', 'vintage fashion'],
+});
 
 export default async function DropsPage() {
   const supabase = await createClient();
@@ -14,6 +24,19 @@ export default async function DropsPage() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
+      <StructuredData
+        data={[
+          collectionSchema({
+            title: 'Roorq Drops',
+            description: 'Weekly drops and curated collections from Roorq.',
+            path: '/drops',
+          }),
+          breadcrumbSchema([
+            { name: 'Home', path: '/' },
+            { name: 'Drops', path: '/drops' },
+          ]),
+        ]}
+      />
       <Navbar />
       <main className="flex-1">
         <div className="bg-black text-white py-20 px-4">

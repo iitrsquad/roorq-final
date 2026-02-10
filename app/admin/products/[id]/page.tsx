@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import AdminNav from '@/components/AdminNav';
 import ProductForm from '@/components/ProductForm';
 import { notFound, redirect } from 'next/navigation';
 
@@ -24,13 +23,9 @@ export default async function EditProductPage({ params }: { params: { id: string
     .order('scheduled_at', { ascending: false });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8">Edit Product</h1>
-        <ProductForm initialData={product} drops={drops || []} />
-      </div>
+    <div>
+      <h1 className="text-3xl font-bold mb-8">Edit Product</h1>
+      <ProductForm initialData={product} drops={drops || []} />
     </div>
   );
 }
-

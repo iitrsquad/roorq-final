@@ -4,9 +4,56 @@ import Footer from '@/components/Footer';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import OrderSuccessConfetti from '@/components/OrderSuccessConfetti';
-// PHASE 1: COD Only - PaymentRetry component commented out
-// import PaymentRetry from '@/components/PaymentRetry';
 import { AlertCircle } from 'lucide-react';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { logger } from '@/lib/logger';
+import { formatINR } from '@/lib/utils/currency';
+
+export const metadata = buildMetadata({
+  title: 'Order Details',
+  description: 'View your order status and delivery details.',
+  path: '/orders',
+  noIndex: true,
+});
+
+type VendorOrderItem = {
+  id: string;
+  quantity: number;
+  price_at_purchase: number;
+  product?: {
+    name: string | null;
+    size: string | null;
+    images: string[] | null;
+  } | null;
+};
+
+type VendorOrder = {
+  id: string;
+  status: string;
+  subtotal: number;
+  shipping_fee: number | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  vendor?: {
+    store_name: string | null;
+    business_name: string | null;
+    email: string | null;
+  } | null;
+  items?: VendorOrderItem[];
+};
+
+const statusLabel: Record<string, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  processing: 'Processing',
+  ready_to_ship: 'Ready to ship',
+  shipped: 'Shipped',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  returned: 'Returned',
+  refunded: 'Refunded',
+};
 
 export default async function OrderDetailPage({
   params,
@@ -14,9 +61,9 @@ export default async function OrderDetailPage({
   params: { id: string };
 }) {
   const supabase = await createClient();
-  
+
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col font-sans">
@@ -35,12 +82,29 @@ export default async function OrderDetailPage({
   }
 
   const { data: order, error } = await supabase
-    .from('orders')
+    .from('parent_orders')
     .select(`
-      *,
-      order_items (
-        *,
-        product:products (*)
+      id,
+      order_number,
+      total_amount,
+      payment_method,
+      payment_status,
+      shipping_address,
+      created_at,
+      vendor_orders (
+        id,
+        status,
+        subtotal,
+        shipping_fee,
+        tracking_number,
+        tracking_url,
+        vendor:users(store_name, business_name, email),
+        items:vendor_order_items (
+          id,
+          quantity,
+          price_at_purchase,
+          product:products (name, size, images)
+        )
       )
     `)
     .eq('id', params.id)
@@ -49,163 +113,136 @@ export default async function OrderDetailPage({
 
   if (error || !order) {
     if (error?.code === 'PGRST116') {
-        // Not found or no access (RLS)
-        notFound();
+      notFound();
     }
-    console.error('Order fetch error:', error);
+    logger.error('Order fetch error', error instanceof Error ? error : undefined);
     return (
-        <div className="min-h-screen flex flex-col font-sans">
-          <Navbar />
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="max-w-md text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold mb-2">Error Loading Order</h2>
-              <p className="text-gray-600 mb-6">We couldn't retrieve the order details. This might be a temporary issue or the order doesn't exist.</p>
-              <a href="/profile" className="text-blue-600 hover:underline font-bold">Return to Profile</a>
-            </div>
+      <div className="min-h-screen flex flex-col font-sans">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="max-w-md text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">Error Loading Order</h2>
+            <p className="text-gray-600 mb-6">We couldn't retrieve the order details. This might be a temporary issue or the order doesn't exist.</p>
+            <a href="/orders" className="text-blue-600 hover:underline font-bold">Return to Orders</a>
           </div>
-          <Footer />
         </div>
+        <Footer />
+      </div>
     );
   }
 
-  // Fetch user profile for contact details needed in retry
-  const { data: profile } = await supabase
-    .from('users')
-    .select('full_name, phone')
-    .eq('id', user.id)
-    .single();
-
-  const statusSteps = [
-    { key: 'placed', label: 'Order Placed' },
-    { key: 'reserved', label: 'Reserved' },
-    { key: 'packed', label: 'Packed' },
-    { key: 'out_for_delivery', label: 'Out for Delivery' },
-    { key: 'delivered', label: 'Delivered' },
-  ];
-
-  const currentStatusIndex = statusSteps.findIndex((s) => s.key === order.status);
-
-  // PHASE 1: COD Only - Payment retry disabled (UPI not available)
-  // Check if payment retry is needed
-  // Condition: Payment Method is UPI AND Payment Status is Pending/Failed AND Order is NOT Cancelled
-  const showRetry = false; // PHASE 1: COD Only - UPI disabled
-  // const showRetry = order.payment_method === 'upi' && 
-  //                   (order.payment_status === 'pending' || order.payment_status === 'failed') &&
-  //                   order.status !== 'cancelled';
+  const shipping = order.shipping_address as { hostel?: string; room?: string; phone?: string; campus?: string } | null;
+  const vendorOrders: VendorOrder[] =
+    (order.vendor_orders ?? []).map((vendorOrder: any) => ({
+      ...vendorOrder,
+      vendor: Array.isArray(vendorOrder.vendor) ? vendorOrder.vendor[0] : vendorOrder.vendor,
+      items: (vendorOrder.items ?? []).map((item: any) => ({
+        ...item,
+        product: Array.isArray(item.product) ? item.product[0] : item.product,
+      })),
+    })) ?? [];
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
-      <div className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-4xl font-bold mb-8">Order #{order.order_number}</h1>
+
+      <div className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-4xl font-bold mb-4">
+          Order #{order.order_number ?? order.id.slice(0, 8).toUpperCase()}
+        </h1>
+        <p className="text-gray-500 mb-8">Placed on {new Date(order.created_at).toLocaleString()}</p>
 
         <OrderSuccessConfetti />
 
-        {/* PHASE 1: COD Only - PaymentRetry component commented out */}
-        {/* {showRetry && (
-          <PaymentRetry 
-            orderId={order.id} 
-            amount={order.total_amount}
-            userName={profile?.full_name || ''}
-            userEmail={user.email || ''}
-            userPhone={profile?.phone || ''}
-          />
-        )} */}
-
-        {/* Order Status */}
-        <div className="bg-gray-50 p-6 rounded-lg mb-8">
-          <h2 className="text-xl font-bold mb-4">Order Status</h2>
-          <div className="flex items-center justify-between overflow-x-auto pb-4 md:pb-0">
-            {statusSteps.map((step, index) => (
-              <div key={step.key} className="flex items-center flex-1 min-w-[80px]">
-                <div className="flex flex-col items-center w-full">
-                  <div
-                    className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-semibold text-xs md:text-base ${
-                      index <= currentStatusIndex
-                        ? 'bg-black text-white'
-                        : 'bg-gray-300 text-gray-600'
-                    }`}
-                  >
-                    {index + 1}
-                  </div>
-                  <span className="text-[10px] md:text-xs mt-2 text-center font-bold uppercase tracking-wide">{step.label}</span>
-                </div>
-                {index < statusSteps.length - 1 && (
-                  <div
-                    className={`flex-1 h-1 mx-2 ${
-                      index < currentStatusIndex ? 'bg-black' : 'bg-gray-300'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Order Items */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold mb-4">Order Items</h2>
-          <div className="space-y-4">
-            {order.order_items?.map((item: any) => (
-              <div
-                key={item.id}
-                className="flex gap-4 border-b pb-4"
-              >
-                {item.product?.images && item.product.images.length > 0 && (
-                  <div className="relative w-20 h-20 md:w-24 md:h-24 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                    <Image
-                      src={item.product.images[0]}
-                      alt={item.product.name}
-                      fill
-                      className="object-cover"
-                      sizes="96px"
-                    />
-                  </div>
-                )}
-                
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg">{item.product?.name}</h3>
-                  <p className="text-gray-600 text-sm">Quantity: {item.quantity}</p>
-                  <p className="text-gray-600 text-sm">Size: {item.product?.size}</p>
-                </div>
-                
-                <div className="text-right">
-                  <p className="font-bold text-lg">₹{(item.price * item.quantity).toFixed(2)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Delivery Information */}
         <div className="bg-gray-50 p-6 rounded-lg mb-8">
           <h2 className="text-xl font-bold mb-4">Delivery Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-               <p className="text-gray-500 uppercase text-xs font-bold tracking-widest mb-1">Address</p>
-               <p className="font-medium">{order.delivery_hostel}, {order.delivery_room}</p>
+              <p className="text-gray-500 uppercase text-xs font-bold tracking-widest mb-1">Address</p>
+              <p className="font-medium">
+                {shipping?.hostel ?? 'Hostel'}{shipping?.room ? `, Room ${shipping.room}` : ''}
+              </p>
+              <p className="text-gray-500">{shipping?.campus ?? 'IIT Roorkee'}</p>
             </div>
             <div>
-               <p className="text-gray-500 uppercase text-xs font-bold tracking-widest mb-1">Payment</p>
-               <p className="font-medium uppercase">{order.payment_method}</p>
-               <p className={`text-xs font-bold uppercase ${order.payment_status === 'paid' ? 'text-green-600' : 'text-orange-600'}`}>
-                 Status: {order.payment_status}
-               </p>
+              <p className="text-gray-500 uppercase text-xs font-bold tracking-widest mb-1">Payment</p>
+              <p className="font-medium uppercase">{order.payment_method}</p>
+              <p className="text-xs font-bold uppercase text-gray-600">
+                Status: {order.payment_status}
+              </p>
             </div>
             <div className="md:col-span-2 border-t pt-4 mt-2">
-               <div className="flex justify-between items-center text-xl font-bold">
-                 <span>Total Amount</span>
-                 <span>₹{order.total_amount.toFixed(2)}</span>
-               </div>
+              <div className="flex justify-between items-center text-xl font-bold">
+                <span>Total Amount</span>
+                <span>{formatINR(order.total_amount)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Order Date */}
-        <div className="text-xs text-gray-400 text-center font-mono uppercase tracking-widest">
-          <p>Order ID: {order.order_number} • Placed on {new Date(order.created_at).toLocaleString()}</p>
+        <div className="space-y-8">
+          {vendorOrders.length === 0 ? (
+            <div className="text-center text-gray-500">No vendor orders found.</div>
+          ) : (
+            vendorOrders.map((vendorOrder) => (
+              <div key={vendorOrder.id} className="border rounded-lg p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      {vendorOrder.vendor?.store_name || vendorOrder.vendor?.business_name || 'Vendor'}
+                    </h2>
+                    <p className="text-sm text-gray-500">Order #{vendorOrder.id.slice(0, 8).toUpperCase()}</p>
+                  </div>
+                  <span className="px-3 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-700">
+                    {statusLabel[vendorOrder.status] ?? vendorOrder.status}
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {(vendorOrder.items ?? []).map((item) => (
+                    <div key={item.id} className="flex gap-4 border-b pb-4">
+                      {item.product?.images && item.product.images.length > 0 && (
+                        <div className="relative w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                          <Image
+                            src={item.product.images[0]}
+                            alt={item.product.name ?? 'Product'}
+                            fill
+                            className="object-cover"
+                            sizes="80px"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{item.product?.name ?? 'Product'}</h3>
+                        <p className="text-gray-600 text-sm">Quantity: {item.quantity}</p>
+                        <p className="text-gray-600 text-sm">Size: {item.product?.size ?? 'N/A'}</p>
+                      </div>
+                      <div className="text-right font-bold">
+                        {formatINR(item.price_at_purchase * item.quantity)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t pt-4 mt-4 flex justify-between items-center font-bold">
+                  <span>Vendor subtotal</span>
+                  <span>{formatINR(vendorOrder.subtotal)}</span>
+                </div>
+
+                {vendorOrder.tracking_number && (
+                  <div className="mt-4 text-sm text-gray-600">
+                    Tracking: {vendorOrder.tracking_number}{' '}
+                    {vendorOrder.tracking_url && (
+                      <a className="text-blue-600 hover:underline" href={vendorOrder.tracking_url} target="_blank" rel="noreferrer">
+                        View tracking
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 

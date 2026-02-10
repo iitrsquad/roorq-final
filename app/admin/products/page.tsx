@@ -1,15 +1,22 @@
-import { createClient } from '@/lib/supabase/server';
+﻿import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatINR } from '@/lib/utils/currency';
+import ProductApprovalActions from './ProductApprovalActions';
 
 export default async function AdminProductsPage() {
   const supabase = await createClient();
 
   const { data: products } = await supabase
     .from('products')
-    .select('*')
+    .select('id, name, category, price, stock_quantity, images, approval_status, vendor:users(store_name, business_name, email)')
     .order('created_at', { ascending: false });
+
+  const normalizedProducts =
+    products?.map((product) => ({
+      ...product,
+      vendor: Array.isArray(product.vendor) ? product.vendor[0] : product.vendor,
+    })) ?? [];
 
   return (
     <div>
@@ -31,6 +38,7 @@ export default async function AdminProductsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -38,8 +46,8 @@ export default async function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {products && products.length > 0 ? (
-                  products.map((product) => (
+                {normalizedProducts.length > 0 ? (
+                  normalizedProducts.map((product) => (
                     <tr key={product.id}>
                       <td className="px-6 py-4">
                         {product.images && product.images.length > 0 ? (
@@ -58,22 +66,26 @@ export default async function AdminProductsPage() {
                       </td>
                       <td className="px-6 py-4 font-medium">{product.name}</td>
                       <td className="px-6 py-4">{product.category}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {product.vendor?.store_name || product.vendor?.business_name || product.vendor?.email || '-'}
+                      </td>
                       <td className="px-6 py-4">{formatINR(product.price)}</td>
                       <td className="px-6 py-4">{product.stock_quantity}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 text-xs rounded ${
-                          product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {product.is_active ? 'Active' : 'Inactive'}
+                        <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800 uppercase">
+                          {product.approval_status}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <Link
-                          href={`/admin/products/${product.id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Edit
-                        </Link>
+                        <div className="flex flex-col gap-2">
+                          <Link
+                            href={`/admin/products/${product.id}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            Edit
+                          </Link>
+                          <ProductApprovalActions productId={product.id} approvalStatus={product.approval_status} />
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -91,4 +103,3 @@ export default async function AdminProductsPage() {
     </div>
   );
 }
-

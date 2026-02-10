@@ -1,25 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 import { Loader2, Plus, X } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface Drop {
   id: string;
   name: string;
 }
 
+type ProductFormInitialData = {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  retail_price?: number | null;
+  category?: string;
+  gender?: string;
+  size?: string;
+  color?: string | null;
+  material?: string | null;
+  stock_quantity?: number;
+  images?: string[];
+  drop_id?: string | null;
+  is_active?: boolean;
+};
+
 interface ProductFormProps {
-  initialData?: any;
+  initialData?: ProductFormInitialData;
   drops: Drop[];
 }
 
 export default function ProductForm({ initialData, drops }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
@@ -60,11 +79,19 @@ export default function ProductForm({ initialData, drops }: ProductFormProps) {
     setLoading(true);
 
     try {
+      const priceValue = Number.parseFloat(String(formData.price));
+      const retailValueRaw = formData.retail_price;
+      const retailValue =
+        retailValueRaw === '' || retailValueRaw === null || retailValueRaw === undefined
+          ? null
+          : Number.parseFloat(String(retailValueRaw));
+      const stockValue = Number.parseInt(String(formData.stock_quantity), 10);
+
       const dataToSubmit = {
         ...formData,
-        price: parseFloat(formData.price),
-        retail_price: formData.retail_price ? parseFloat(formData.retail_price) : null,
-        stock_quantity: parseInt(formData.stock_quantity.toString()),
+        price: priceValue,
+        retail_price: retailValue,
+        stock_quantity: stockValue,
         drop_id: formData.drop_id || null,
       };
 
@@ -85,9 +112,10 @@ export default function ProductForm({ initialData, drops }: ProductFormProps) {
 
       // Use replace to prevent back button issues, remove refresh to avoid session issues
       router.replace('/admin/products');
-    } catch (error: any) {
-      console.error('Error saving product:', error);
-      toast.error(error.message || 'Failed to save product');
+    } catch (error: unknown) {
+      logger.error('Error saving product', error instanceof Error ? error : undefined);
+      const message = error instanceof Error ? error.message : 'Failed to save product';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -247,7 +275,13 @@ export default function ProductForm({ initialData, drops }: ProductFormProps) {
         <div className="grid grid-cols-4 gap-4">
           {formData.images.map((url: string, idx: number) => (
             <div key={idx} className="relative aspect-square bg-gray-100 rounded overflow-hidden group">
-              <img src={url} alt="" className="w-full h-full object-cover" />
+              <Image
+                src={url}
+                alt={`Product image ${idx + 1}`}
+                fill
+                sizes="(max-width: 768px) 25vw, 10vw"
+                className="object-cover"
+              />
               <button
                 type="button"
                 onClick={() => handleRemoveImage(idx)}

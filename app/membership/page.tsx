@@ -1,11 +1,27 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Check, Star, Zap } from 'lucide-react';
+import StructuredData from '@/components/StructuredData';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { breadcrumbSchema } from '@/lib/seo/schema';
+import { Check, Star } from 'lucide-react';
 import Link from 'next/link';
+
+export const metadata = buildMetadata({
+  title: 'Membership',
+  description: 'Roorq Gold membership with early access and free delivery.',
+  path: '/membership',
+  keywords: ['membership', 'Roorq Gold', 'early access'],
+});
 
 export default function MembershipPage() {
   return (
     <div className="min-h-screen flex flex-col font-sans">
+      <StructuredData
+        data={breadcrumbSchema([
+          { name: 'Home', path: '/' },
+          { name: 'Membership', path: '/membership' },
+        ])}
+      />
       <Navbar />
       <main className="flex-1">
         {/* Hero Section */}
@@ -54,9 +70,12 @@ export default function MembershipPage() {
                 <Star className="w-12 h-12 text-yellow-500 mx-auto mb-4 fill-current" />
                 <div className="text-5xl font-black mb-2">₹499</div>
                 <div className="text-xs uppercase tracking-widest text-gray-400 mb-8">Per Semester</div>
-                <button className="w-full bg-yellow-500 text-black font-black uppercase tracking-widest py-4 hover:bg-white hover:text-black transition-colors">
+                <Link
+                  href="/contact?topic=membership"
+                  className="block w-full bg-yellow-500 text-black font-black uppercase tracking-widest py-4 hover:bg-white hover:text-black transition-colors"
+                >
                   Join Now
-                </button>
+                </Link>
                 <p className="mt-4 text-[10px] text-gray-500">Secure Payment • Cancel Anytime</p>
               </div>
             </div>

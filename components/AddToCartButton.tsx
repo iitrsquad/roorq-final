@@ -1,21 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ShoppingCart, Check, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { logger } from '@/lib/logger';
 
 interface AddToCartButtonProps {
   productId: string;
   disabled?: boolean;
 }
 
+type CartItem = {
+  productId: string;
+  quantity: number;
+};
+
 export default function AddToCartButton({ productId, disabled }: AddToCartButtonProps) {
   const [loading, setLoading] = useState(false);
   const [added, setAdded] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const handleAddToCart = async () => {
     if (disabled || loading) return;
@@ -32,10 +38,10 @@ export default function AddToCartButton({ productId, disabled }: AddToCartButton
       }
 
       // Get cart from localStorage or create new
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]') as CartItem[];
       
       // Check if product already in cart
-      const existingItem = cart.find((item: any) => item.productId === productId);
+      const existingItem = cart.find((item) => item.productId === productId);
       
       if (existingItem) {
         existingItem.quantity += 1;
@@ -56,8 +62,8 @@ export default function AddToCartButton({ productId, disabled }: AddToCartButton
       
       // Removed router.refresh() - it causes unnecessary re-renders and can break sessions
       // The cart state is in localStorage, so no refresh needed
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    } catch (error: unknown) {
+      logger.error('Error adding to cart', error instanceof Error ? error : undefined);
       toast.error('Failed to add to cart. Please try again.');
     } finally {
       setLoading(false);

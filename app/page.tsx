@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import DropCountdown from '@/components/DropCountdown';
@@ -6,7 +7,15 @@ import { createClient } from '@/lib/supabase/server';
 import ProductCard from '@/components/ProductCard';
 import CommunityStrip from '@/components/CommunityStrip';
 import FAQ from '@/components/FAQ';
+import { buildMetadata } from '@/lib/seo/metadata';
 import { ArrowRight, Check, Package, Zap, TrendingUp, ShieldCheck, Truck, CreditCard, Star, UserPlus, ShoppingBag, Clock, Quote } from 'lucide-react';
+
+export const metadata = buildMetadata({
+  title: 'Weekly Drops',
+  description: 'Campus-exclusive weekly-drop fashion platform for IIT Roorkee. COD-first with hostel delivery.',
+  path: '/',
+  keywords: ['Roorq', 'IIT Roorkee', 'weekly drops', 'campus fashion', 'COD delivery'],
+});
 
 export default async function Home() {
   const supabase = await createClient();
@@ -31,11 +40,14 @@ export default async function Home() {
       {/* SECTION 1: Hero Banner (Strict Thrifted.com Clone) */}
       <section className="relative w-full h-[600px] md:h-[800px] bg-gray-100 overflow-hidden">
         {/* Background Image - Full Bleed */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=2070&auto=format&fit=crop"
-            alt="Hero Background"
-            className="w-full h-full object-cover object-center"
+        <div className="absolute inset-0 z-0 bg-white">
+          <Image
+            src="https://images.unsplash.com/photo-1611323593958-0fec16fa2909?auto=format&fit=max&w=2000&q=80"
+            alt="Woman in a winter jacket"
+            fill
+            priority
+            sizes="100vw"
+            className="object-contain object-center"
           />
         </div>
         
@@ -180,10 +192,12 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Men's Column */}
           <div className="relative h-[650px] group overflow-hidden border border-transparent hover:border-black transition-colors duration-300">
-            <img 
+            <Image
               src="https://images.unsplash.com/photo-1488161628813-99c974fc5fe2?auto=format&fit=crop&w=800&q=80"
-              alt="Shop Men's"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              alt="Shop men's vintage"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] bg-white p-6 text-center shadow-xl border border-black">
@@ -198,10 +212,12 @@ export default async function Home() {
 
           {/* Women's Column */}
           <div className="relative h-[650px] group overflow-hidden border border-transparent hover:border-black transition-colors duration-300">
-             <img 
+             <Image
               src="https://images.unsplash.com/photo-1503341455253-b2e72333dbdb?auto=format&fit=crop&w=800&q=80"
-              alt="Shop Women's"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              alt="Shop women's vintage"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] bg-white p-6 text-center shadow-xl border border-black">
@@ -216,9 +232,11 @@ export default async function Home() {
 
            {/* Outlet Column */}
            <div className="relative h-[650px] group overflow-hidden border border-transparent hover:border-black transition-colors duration-300">
-             <img 
+             <Image
               src="https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=800&q=80"
-              alt="Shop Outlet"
+              alt="Shop outlet"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
@@ -280,8 +298,14 @@ export default async function Home() {
             { title: 'Vintage Denim & T Shirts', img: 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?auto=format&fit=crop&w=800&q=80' },
           ].map((item, idx) => (
             <Link key={idx} href="/shop" className="group block">
-              <div className="aspect-square overflow-hidden bg-gray-100 mb-3 border border-transparent group-hover:border-black transition-all duration-300">
-                <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="relative aspect-square overflow-hidden bg-gray-100 mb-3 border border-transparent group-hover:border-black transition-all duration-300">
+                <Image
+                  src={item.img}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
               </div>
               <p className="uppercase text-xs tracking-widest font-bold font-mono group-hover:text-gray-600">{item.title} &rarr;</p>
             </Link>
@@ -323,8 +347,14 @@ export default async function Home() {
             { title: 'Vintage Nascar', img: 'https://images.unsplash.com/photo-1523206489230-c012c64b2b48?auto=format&fit=crop&w=800&q=80' },
           ].map((item, idx) => (
             <Link key={idx} href="/shop" className="group block">
-              <div className="aspect-square overflow-hidden bg-gray-100 mb-3 border border-transparent group-hover:border-black transition-all duration-300">
-                <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="relative aspect-square overflow-hidden bg-gray-100 mb-3 border border-transparent group-hover:border-black transition-all duration-300">
+                <Image
+                  src={item.img}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
               </div>
               <p className="uppercase text-xs tracking-widest font-bold font-mono group-hover:text-gray-600">{item.title} &rarr;</p>
             </Link>
@@ -420,10 +450,12 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card 1 - Brand New */}
             <div className="relative h-[500px] group overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1548883354-94bcfe321cbb?q=80&w=2070&auto=format&fit=crop" 
-                alt="Brand New Only"
-                className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
+              <Image
+                src="https://images.unsplash.com/photo-1548883354-94bcfe321cbb?q=80&w=2070&auto=format&fit=crop"
+                alt="Brand new only"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500"></div>
               <div className="absolute bottom-0 left-0 w-full p-10 text-white border-t border-white/20 backdrop-blur-sm bg-black/30">
@@ -437,10 +469,12 @@ export default async function Home() {
 
             {/* Card 2 - Lowest Price */}
             <div className="relative h-[500px] group overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2070&auto=format&fit=crop" 
-                alt="Lowest Campus Price"
-                className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
+              <Image
+                src="https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2070&auto=format&fit=crop"
+                alt="Lowest campus price"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500"></div>
               <div className="absolute bottom-0 left-0 w-full p-10 text-white border-t border-white/20 backdrop-blur-sm bg-black/30">
@@ -454,10 +488,12 @@ export default async function Home() {
 
             {/* Card 3 - IITR Exclusive */}
             <div className="relative h-[500px] group overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop" 
-                alt="Campus Exclusive"
-                className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
+              <Image
+                src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop"
+                alt="Campus exclusive"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500"></div>
               <div className="absolute bottom-0 left-0 w-full p-10 text-white border-t border-white/20 backdrop-blur-sm bg-black/30">
@@ -477,10 +513,12 @@ export default async function Home() {
 
       {/* SECTION 9: Shop Sale Banner */}
       <section className="relative h-[400px] flex items-center justify-center overflow-hidden">
-        <img 
+        <Image
           src="https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop"
-          alt="Shop Sale"
-          className="absolute inset-0 w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
+          alt="Shop sale"
+          fill
+          sizes="100vw"
+          className="object-cover grayscale hover:grayscale-0 transition-all duration-1000"
         />
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative z-10 text-center">

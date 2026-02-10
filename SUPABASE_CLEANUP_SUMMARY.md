@@ -47,6 +47,9 @@ gender TEXT DEFAULT 'unisex' CHECK (gender IN ('men', 'women', 'unisex', 'kids')
 - `idx_users_role` - For faster role lookups
 
 #### 4. Added `get_user_role()` Function
+   - `create_checkout_order()` - Required for COD checkout
+   - `process_cod_payment()` - Required for COD collection
+   - `cancel_cod_order()` - Required for cancellations
 ```sql
 CREATE OR REPLACE FUNCTION get_user_role(user_id UUID)
 RETURNS TEXT AS $$
@@ -61,14 +64,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
   - `components/Footer.tsx` (line 17)
   - `lib/auth/require-admin.ts` (line 29)
 
-#### 5. Added `process_payment_success()` Function
+#### 5. Added COD Order/Payment Helpers
 ```sql
-CREATE OR REPLACE FUNCTION public.process_payment_success(...)
+create_checkout_order(...)
+process_cod_payment(...)
+cancel_cod_order(...)
 ```
-- **Why:** Required by Razorpay webhook and verify-payment functions
-- **Used by:**
-  - `supabase/functions/razorpay-webhook/index.ts` (line 52)
-  - `supabase/functions/verify-payment/index.ts` (line 70)
+- **Why:** Required for COD-only checkout and admin order management
+- **Used by:** Checkout API and admin order workflows
 
 ---
 
@@ -117,7 +120,9 @@ CREATE OR REPLACE FUNCTION public.process_payment_success(...)
 - ✅ Added missing `role` column to schema.sql
 - ✅ Added missing `gender` column to schema.sql
 - ✅ Added missing `get_user_role()` function to schema.sql
-- ✅ Added missing `process_payment_success()` function to schema.sql
+   - `create_checkout_order()` - Required for COD checkout
+   - `process_cod_payment()` - Required for COD collection
+   - `cancel_cod_order()` - Required for cancellations
 - ✅ Added necessary indexes
 
 ### 📊 Migration Files Remaining:
@@ -146,7 +151,9 @@ CREATE OR REPLACE FUNCTION public.process_payment_success(...)
 
 3. **Verify Functions:**
    - ✅ `get_user_role()` - Required for admin checks
-   - ✅ `process_payment_success()` - Required for payment processing
+   - `create_checkout_order()` - Required for COD checkout
+   - `process_cod_payment()` - Required for COD collection
+   - `cancel_cod_order()` - Required for cancellations
    - ✅ `reserve_inventory()` - Already in schema.sql
    - ✅ `release_inventory()` - Already in schema.sql
 
@@ -173,4 +180,5 @@ CREATE OR REPLACE FUNCTION public.process_payment_success(...)
 
 **Cleanup Completed By:** Full-Stack E-commerce Developer  
 **Date:** December 2024
+
 

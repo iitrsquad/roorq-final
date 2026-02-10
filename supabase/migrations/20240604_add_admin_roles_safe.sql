@@ -12,9 +12,8 @@ CHECK (role IN ('customer', 'admin', 'super_admin'));
 CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
 
 -- 3. Set initial super_admin
-UPDATE public.users 
-SET role = 'super_admin' 
-WHERE email = 'nenavathharish02@gmail.com';
+-- NOTE: Removed hardcoded email. Promote the first super_admin manually via admin UI or SQL:
+-- UPDATE public.users SET role = 'super_admin' WHERE email = '<admin-email>';
 
 -- 4. Enable RLS on riders table (if not already)
 ALTER TABLE public.riders ENABLE ROW LEVEL SECURITY;

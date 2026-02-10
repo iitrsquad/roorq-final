@@ -72,22 +72,20 @@
 1. **Environment Variables** (Set in Vercel Dashboard):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `RAZORPAY_KEY_ID`
-   - `RAZORPAY_KEY_SECRET`
-   - `NEXT_PUBLIC_RAZORPAY_KEY_ID`
-   - `RAZORPAY_WEBHOOK_SECRET`
-   - `RESEND_API_KEY` (optional)
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `RESEND_API_KEY`
+   - `MAILCHIMP_API_KEY` (optional)
+   - `MAILCHIMP_AUDIENCE_ID` (optional)
+   - `NEXT_PUBLIC_GA_ID` (optional)
+   - `SENTRY_DSN` (optional)
+   - `NEXT_PUBLIC_SENTRY_DSN` (optional)
 
 2. **Supabase Configuration:**
    - Update Auth redirect URLs
    - Deploy Edge Functions
    - Set Edge Function secrets
 
-3. **Razorpay Configuration:**
-   - Configure webhook URL
-   - Set webhook secret
-
-4. **Domain:**
+3. **Domain:**
    - Connect custom domain in Vercel
    - Update DNS records
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,6 +10,7 @@ import Link from 'next/link';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { logger } from '@/lib/logger';
 
 interface CartItem {
   productId: string;
@@ -26,21 +28,16 @@ interface CartItem {
 export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    loadCart();
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-  };
+  }, [supabase]);
 
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     try {
     const cartData = JSON.parse(localStorage.getItem('cart') || '[]');
       
@@ -61,7 +58,7 @@ export default function CartPage() {
           .single();
         
           if (error || !data) {
-            console.warn(`Product ${item.productId} not found or inactive`);
+            logger.warn(`Product ${item.productId} not found or inactive`);
             return null;
           }
           
@@ -94,13 +91,18 @@ export default function CartPage() {
         localStorage.setItem('cart', JSON.stringify(validProducts.map(({ product, ...item }) => item)));
         window.dispatchEvent(new Event('cartUpdated'));
       }
-    } catch (error) {
-      console.error('Error loading cart:', error);
+    } catch (error: unknown) {
+      logger.error('Error loading cart', error instanceof Error ? error : undefined);
       toast.error('Failed to load cart. Please refresh the page.');
     } finally {
     setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadCart();
+    checkAuth();
+  }, [loadCart, checkAuth]);
 
   const updateQuantity = (productId: string, delta: number) => {
     const updatedCart = cart.map((item) => {
@@ -268,4 +270,3 @@ export default function CartPage() {
     </div>
   );
 }
-

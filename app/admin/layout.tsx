@@ -1,10 +1,13 @@
 import { requireAdmin } from '@/lib/auth/require-admin'
 import AdminNav from '@/components/AdminNav'
+import { buildMetadata } from '@/lib/seo/metadata'
 
-export const metadata = {
-  title: 'Admin Dashboard | Roorq',
-  description: 'Roorq Admin Panel - Manage products, orders, and more',
-}
+export const metadata = buildMetadata({
+  title: 'Admin Dashboard',
+  description: 'Roorq admin operations dashboard.',
+  path: '/admin',
+  noIndex: true,
+})
 
 export default async function AdminLayout({
   children,

@@ -18,15 +18,16 @@ Before deploying, ensure these environment variables are set in Vercel:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
+RESEND_API_KEY=your_resend_api_key
 ```
 
-### Optional:
+### Optional (feature-based):
 ```
-RESEND_API_KEY=your_resend_api_key (for email notifications)
+MAILCHIMP_API_KEY=your_mailchimp_api_key
+MAILCHIMP_AUDIENCE_ID=your_mailchimp_audience_id
+NEXT_PUBLIC_GA_ID=your_google_analytics_id
+SENTRY_DSN=your_sentry_dsn
+NEXT_PUBLIC_SENTRY_DSN=your_public_sentry_dsn
 ```
 
 ## 🚀 Deployment Methods
@@ -107,15 +108,11 @@ RESEND_API_KEY=your_resend_api_key (for email notifications)
 - Check environment variables are set
 - Verify redirect URLs match exactly
 
-### Payment Issues
-- Verify Razorpay keys are correct
-- Check webhook URL is configured in Razorpay dashboard
-- Verify `RAZORPAY_WEBHOOK_SECRET` matches
-
 ## 📝 Notes
 
 - The `vercel.json` file has been created with optimal settings
 - Build tested successfully with 41 pages
 - All hardcoded values have been removed
 - Test connection page is protected (only shows in development)
+
 

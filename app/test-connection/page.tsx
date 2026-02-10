@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 /**
  * REASON: Protecting test/debug page for production
@@ -17,7 +18,25 @@ export default function TestConnectionPage() {
     setIsDev(process.env.NODE_ENV === 'development');
   }, []);
   const [status, setStatus] = useState<string>('Testing...');
-  const [envCheck, setEnvCheck] = useState<any>({});
+  const [envCheck, setEnvCheck] = useState<{
+    hasUrl: boolean;
+    urlStart: string;
+    hasKey: boolean;
+    keyStart: string;
+    isKeyValidFormat: boolean;
+    isUrlValidFormat: boolean;
+    hasQuotes: boolean;
+    isPlaceholder: boolean;
+  }>({
+    hasUrl: false,
+    urlStart: 'MISSING',
+    hasKey: false,
+    keyStart: 'MISSING',
+    isKeyValidFormat: false,
+    isUrlValidFormat: false,
+    hasQuotes: false,
+    isPlaceholder: false,
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,10 +46,10 @@ export default function TestConnectionPage() {
         const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
         // Validation Checks
-        const isKeyValidFormat = key?.startsWith('eyJh');
-        const isUrlValidFormat = url?.includes('.supabase.co');
-        const hasQuotes = url?.includes('"') || key?.includes('"');
-        const isPlaceholder = key?.toLowerCase().includes('place') || url?.includes('your-project');
+        const isKeyValidFormat = !!key && key.startsWith('eyJh');
+        const isUrlValidFormat = !!url && url.includes('.supabase.co');
+        const hasQuotes = (!!url && url.includes('"')) || (!!key && key.includes('"'));
+        const isPlaceholder = (!!key && key.toLowerCase().includes('place')) || (!!url && url.includes('your-project'));
 
         setEnvCheck({
           hasUrl: !!url,
@@ -58,9 +77,10 @@ export default function TestConnectionPage() {
         if (error) throw error;
 
         setStatus('SUCCESS: Connected to Supabase!');
-      } catch (err: any) {
-        console.error('Connection Error:', err);
-        setError(err.message || 'Unknown error occurred');
+      } catch (err: unknown) {
+        logger.error('Connection Error', err instanceof Error ? err : undefined);
+        const message = err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(message);
         setStatus('FAILED');
       }
     };

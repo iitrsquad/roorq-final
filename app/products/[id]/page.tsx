@@ -1,24 +1,61 @@
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
 import AddToCartButton from '@/components/AddToCartButton';
+import StructuredData from '@/components/StructuredData';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { breadcrumbSchema, productSchema } from '@/lib/seo/schema';
+import { formatINR } from '@/lib/utils/currency';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Check, ShieldCheck, Truck, RefreshCcw, Ruler } from 'lucide-react';
+
+const getProduct = cache(async (id: string) => {
+  const supabase = await createClient();
+  const { data: product } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .eq('is_active', true)
+    .single();
+
+  return product;
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const product = await getProduct(params.id);
+
+  if (!product) {
+    return buildMetadata({
+      title: 'Product not found',
+      description: 'The requested product could not be found.',
+      path: `/products/${params.id}`,
+      noIndex: true,
+    });
+  }
+
+  return buildMetadata({
+    title: product.name,
+    description: product.description || 'Vintage fashion item from Roorq.',
+    path: `/products/${product.id}`,
+    image: product.images?.[0],
+    keywords: [product.name, product.category, product.brand].filter(Boolean) as string[],
+  });
+}
 
 export default async function ProductDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const supabase = await createClient();
-  
-  const { data: product } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', params.id)
-    .eq('is_active', true)
-    .single();
+  const product = await getProduct(params.id);
 
   if (!product) {
     notFound();
@@ -32,6 +69,25 @@ export default async function ProductDetailPage({
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white">
+      <StructuredData
+        data={[
+          productSchema({
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            images: product.images,
+            price: product.price,
+            brand: product.brand,
+            category: product.category,
+            inStock: availableStock > 0,
+          }),
+          breadcrumbSchema([
+            { name: 'Home', path: '/' },
+            { name: 'Shop', path: '/shop' },
+            { name: product.name, path: `/products/${product.id}` },
+          ]),
+        ]}
+      />
       <Navbar />
       
       <div className="flex-1 max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -91,11 +147,11 @@ export default async function ProductDetailPage({
               
               <div className="flex items-center justify-between mb-6">
                  <div className="flex items-center gap-4">
-                    <span className="text-3xl font-black tracking-tight">₹{product.price.toFixed(0)}</span>
+                    <span className="text-3xl font-black tracking-tight">{formatINR(product.price)}</span>
                     {product.retail_price && product.retail_price > product.price && (
                       <div className="flex items-center gap-2">
                         <span className="text-xl text-gray-400 line-through decoration-1">
-                          ₹{product.retail_price.toFixed(0)}
+                          {formatINR(product.retail_price)}
                         </span>
                         <span className="bg-red-600 text-white px-2 py-0.5 text-xs font-black uppercase tracking-widest">
                           -{savings}%
@@ -115,9 +171,9 @@ export default async function ProductDetailPage({
               <div className="bg-gray-50 p-6 border border-gray-100 mb-8">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm font-bold uppercase tracking-widest">Size</span>
-                  <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide underline text-gray-500 hover:text-black">
+                  <Link href="/sizing" className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide underline text-gray-500 hover:text-black">
                     <Ruler className="w-3 h-3" /> Size Guide
-                  </button>
+                  </Link>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 flex items-center justify-center bg-black text-white text-lg font-bold border-2 border-black">

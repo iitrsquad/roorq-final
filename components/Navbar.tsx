@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useRef, useEffect } from 'react';
-import { ShoppingCart, Menu, X, User, Search, ChevronDown, LogOut } from 'lucide-react';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { ShoppingCart, Menu, X, User as UserIcon, Search, ChevronDown, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 const NAVIGATION_ITEMS = [
   {
@@ -99,7 +101,7 @@ const NAVIGATION_ITEMS = [
   },
   {
     label: "THE EDIT",
-    href: '/drops',
+    href: '/editorial',
     dropdown: null
   }
 ];
@@ -109,7 +111,7 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
@@ -117,17 +119,40 @@ export default function Navbar() {
   const userMenuRef = useRef<HTMLDivElement>(null);
   
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+  type CartItem = { quantity?: number };
+
+  const handleUserMenuClick = async () => {
+    if (loading) return;
+
+    if (user) {
+      setIsUserMenuOpen(!isUserMenuOpen);
+      return;
+    }
+
+    try {
+      const { data: { user: freshUser }, error } = await supabase.auth.getUser();
+      if (!error && freshUser) {
+        setUser(freshUser);
+        setIsUserMenuOpen(true);
+        return;
+      }
+    } catch (err) {
+      logger.debug('Auth recheck error', err instanceof Error ? err : undefined);
+    }
+
+    router.push('/auth');
+  };
 
   // Update cart count from localStorage
   useEffect(() => {
     const updateCartCount = () => {
       try {
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const totalItems = cart.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]') as CartItem[];
+        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
         setCartCount(totalItems);
       } catch (error) {
-        console.error('Error reading cart:', error);
+        logger.error('Error reading cart', error instanceof Error ? error : undefined);
         setCartCount(0);
       }
     };
@@ -189,7 +214,7 @@ export default function Navbar() {
               const { data: role, error: roleError } = await supabase.rpc('get_user_role', { user_id: user.id });
               if (isMounted) {
                 if (roleError) {
-                  console.debug('Role fetch error (non-critical):', roleError);
+                  logger.debug('Role fetch error (non-critical)', roleError instanceof Error ? roleError : undefined);
                   // Don't clear user, just don't set role
                 } else if (role) {
                   setUserRole(role);
@@ -197,7 +222,7 @@ export default function Navbar() {
               }
             } catch (err) {
               // Silently handle role fetch errors - don't break user experience
-              console.debug('Role check error:', err);
+              logger.debug('Role check error', err instanceof Error ? err : undefined);
             }
           } else {
             setUserRole(null);
@@ -205,7 +230,7 @@ export default function Navbar() {
         }
       } catch (err) {
         // Catch any unexpected errors
-        console.debug('Auth check error:', err);
+        logger.debug('Auth check error', err instanceof Error ? err : undefined);
         // Don't clear user state on unexpected errors - prevent false logouts
       } finally {
         if (isMounted) {
@@ -229,19 +254,23 @@ export default function Navbar() {
             const { data: role, error: roleError } = await supabase.rpc('get_user_role', { user_id: session.user.id });
             if (isMounted) {
               if (roleError) {
-                console.debug('Role fetch error in auth change:', roleError);
+                logger.debug('Role fetch error in auth change', roleError instanceof Error ? roleError : undefined);
               } else if (role) {
                 setUserRole(role);
               }
             }
           } catch (err) {
-            console.debug('Role check error in auth change:', err);
+            logger.debug('Role check error in auth change', err instanceof Error ? err : undefined);
           }
         } else {
           setUserRole(null);
         }
+
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          router.refresh();
+        }
       } catch (err) {
-        console.debug('Auth state change error:', err);
+        logger.debug('Auth state change error', err instanceof Error ? err : undefined);
       }
     });
 
@@ -249,7 +278,7 @@ export default function Navbar() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]); // Include supabase in dependencies
+  }, [supabase, router]); // Include supabase and router in dependencies
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -282,8 +311,8 @@ export default function Navbar() {
       // Use replace instead of push to prevent back button issues
       router.replace('/');
       // Remove router.refresh() - it's unnecessary and can cause issues
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (error: unknown) {
+      logger.error('Logout error', error instanceof Error ? error : undefined);
       // Still navigate even if signOut fails
       router.replace('/');
     }
@@ -338,15 +367,9 @@ export default function Navbar() {
               <div className="relative" ref={userMenuRef}>
                 <button 
                   className="p-2 hover:text-gray-600"
-                  onClick={() => {
-                    if (user) {
-                      setIsUserMenuOpen(!isUserMenuOpen);
-                    } else {
-                      router.push('/auth');
-                    }
-                  }}
+                  onClick={handleUserMenuClick}
                 >
-                  <User className="w-5 h-5" />
+                  <UserIcon className="w-5 h-5" />
                 </button>
                 
                 {/* User Dropdown Menu */}
@@ -544,11 +567,11 @@ export default function Navbar() {
                 <>
                   {(userRole === 'admin' || userRole === 'super_admin') && (
                     <Link href="/admin" className="flex items-center gap-4 text-lg font-bold uppercase mb-4 text-red-600" onClick={() => setIsMenuOpen(false)}>
-                      <User className="w-6 h-6" /> Admin Dashboard
+                      <UserIcon className="w-6 h-6" /> Admin Dashboard
                     </Link>
                   )}
                   <Link href="/profile" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
-                    <User className="w-6 h-6" /> My Account
+                    <UserIcon className="w-6 h-6" /> My Account
                   </Link>
                   <Link href="/orders" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
                     My Orders
@@ -565,7 +588,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <Link href="/auth" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
-                  <User className="w-6 h-6" /> Sign In
+                  <UserIcon className="w-6 h-6" /> Sign In
                 </Link>
               )}
               <Link href="/faq" className="flex items-center gap-4 text-lg font-bold uppercase mt-4" onClick={() => setIsMenuOpen(false)}>

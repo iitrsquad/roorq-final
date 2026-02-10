@@ -3,6 +3,16 @@ import { redirect } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import { buildMetadata } from '@/lib/seo/metadata';
+
+export const dynamic = 'force-dynamic';
+
+export const metadata = buildMetadata({
+  title: 'Profile',
+  description: 'Manage your Roorq profile and preferences.',
+  path: '/profile',
+  noIndex: true,
+});
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -10,7 +20,7 @@ export default async function ProfilePage() {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    redirect('/auth?redirect=/profile');
+    redirect('/auth');
   }
 
   const { data: profile } = await supabase
@@ -106,4 +116,3 @@ export default async function ProfilePage() {
     </div>
   );
 }
-

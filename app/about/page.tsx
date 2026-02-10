@@ -1,9 +1,25 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import StructuredData from '@/components/StructuredData';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { breadcrumbSchema } from '@/lib/seo/schema';
+
+export const metadata = buildMetadata({
+  title: 'About',
+  description: 'Roorq is a campus-first movement against fast fashion.',
+  path: '/about',
+  keywords: ['about roorq', 'sustainable fashion', 'IIT Roorkee'],
+});
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col font-sans">
+      <StructuredData
+        data={breadcrumbSchema([
+          { name: 'Home', path: '/' },
+          { name: 'About', path: '/about' },
+        ])}
+      />
       <Navbar />
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">

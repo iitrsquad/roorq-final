@@ -40,8 +40,8 @@ export function formatINRWithDecimals(amount: number | null | undefined): string
 }
 
 /**
- * Convert rupees to paise (for Razorpay)
- * Razorpay expects amounts in the smallest currency unit (paise for INR)
+ * Convert rupees to paise (smallest unit for INR)
+ * Useful for APIs that expect amounts in minor units.
  * @param rupees - Amount in rupees
  * @returns Amount in paise
  */

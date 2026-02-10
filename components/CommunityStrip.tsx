@@ -34,7 +34,7 @@ export default function CommunityStrip() {
         <div className="flex justify-between items-end mb-10">
           <div>
             <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">As Seen On Campus</h2>
-            <p className="text-sm text-gray-500 uppercase tracking-widest font-medium">Join the community @roorq.in</p>
+            <p className="text-sm text-gray-500 uppercase tracking-widest font-medium">Join the community @roorq.iitr</p>
           </div>
           <div className="flex gap-2">
             <button 
@@ -59,9 +59,11 @@ export default function CommunityStrip() {
         >
           {photos.map((src, idx) => (
             <div key={idx} className="min-w-[250px] md:min-w-[300px] relative aspect-[4/5] bg-gray-100 group cursor-pointer">
-              <img 
+              <Image
                 src={src}
                 alt={`Community ${idx + 1}`}
+                fill
+                sizes="(max-width: 768px) 60vw, 20vw"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -74,4 +76,3 @@ export default function CommunityStrip() {
     </section>
   );
 }
-

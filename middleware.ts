@@ -1,6 +1,18 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const IDLE_TIMEOUT_SECONDS = 7 * 24 * 60 * 60;
+const LAST_SEEN_REFRESH_SECONDS = 5 * 60;
+
+const buildFingerprint = async (ip: string, userAgent: string) => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${ip}|${userAgent}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+};
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -8,9 +20,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Skip auth check for API routes - they handle their own authentication
-  // This prevents unnecessary session checks and confusing error messages
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  const pathname = request.nextUrl.pathname;
+
+  // Skip auth check for API routes and public assets
+  if (pathname.startsWith('/api/')) {
     return response;
   }
 
@@ -74,29 +87,76 @@ export async function middleware(request: NextRequest) {
   // This prevents session invalidation on network errors or temporary issues
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
-    
-    // Only log errors for debugging, don't break the request flow
-    // Common expected errors (no session for logged-out users) are silent
-    if (error) {
-      // These are expected errors for logged-out users - don't log them
-      const expectedErrors = [
-        'Invalid Refresh Token: Refresh Token Not Found',
-        'Auth session missing!',
-        'JWT expired',
-        'Invalid Refresh Token',
-      ];
-      
-      // Only log unexpected errors (not the common "no session" cases)
-      if (!expectedErrors.some(msg => error.message.includes(msg))) {
-        // This is an unexpected error - log it for debugging
-        console.debug('Middleware auth check (unexpected error):', error.message);
+
+    if (user) {
+      const now = Date.now();
+      const lastSeenRaw = request.cookies.get('auth_last_seen')?.value;
+      const lastSeen = lastSeenRaw ? Number(lastSeenRaw) : null;
+
+      if (lastSeen && Number.isFinite(lastSeen)) {
+        const idleSeconds = Math.floor((now - lastSeen) / 1000);
+        if (idleSeconds > IDLE_TIMEOUT_SECONDS) {
+          await supabase.auth.signOut();
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = '/auth';
+          redirectUrl.searchParams.set('error', 'session_expired');
+
+          response = NextResponse.redirect(redirectUrl);
+          response.cookies.set('auth_last_seen', '', {
+            maxAge: 0,
+            path: '/',
+            sameSite: 'lax',
+            httpOnly: true,
+          });
+          response.cookies.set('auth_fingerprint', '', {
+            maxAge: 0,
+            path: '/',
+            sameSite: 'lax',
+            httpOnly: true,
+          });
+          return response;
+        }
       }
-      // Otherwise, silently continue - this is normal for logged-out users
+
+      const shouldRefreshLastSeen =
+        !lastSeen || !Number.isFinite(lastSeen) || (now - (lastSeen || 0)) / 1000 > LAST_SEEN_REFRESH_SECONDS;
+
+      if (shouldRefreshLastSeen) {
+        response.cookies.set('auth_last_seen', `${now}`, {
+          maxAge: IDLE_TIMEOUT_SECONDS,
+          path: '/',
+          sameSite: 'lax',
+          httpOnly: true,
+        });
+      }
+
+      const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+      const userAgent = request.headers.get('user-agent') || '';
+      const fingerprint = await buildFingerprint(ip, userAgent);
+      const storedFingerprint = request.cookies.get('auth_fingerprint')?.value;
+
+      if (storedFingerprint && storedFingerprint !== fingerprint) {
+        response.cookies.set('auth_suspicious', '1', {
+          maxAge: 60 * 60,
+          path: '/',
+          sameSite: 'lax',
+          httpOnly: true,
+        });
+      } else if (!storedFingerprint) {
+        response.cookies.set('auth_fingerprint', fingerprint, {
+          maxAge: IDLE_TIMEOUT_SECONDS,
+          path: '/',
+          sameSite: 'lax',
+          httpOnly: true,
+        });
+      }
+    }
+    if (!user) {
+      return response;
     }
   } catch (error) {
     // Catch any unexpected errors and continue
     // This ensures navigation never breaks due to auth issues
-    console.debug('Middleware auth error (non-blocking):', error);
   }
 
   return response;

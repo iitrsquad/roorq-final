@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 const quotes = [
   "Defined by the streets of Roorq.",
@@ -16,12 +17,19 @@ const quotes = [
 ];
 
 export default function Preloader() {
+  const pathname = usePathname() ?? '';
   const [loading, setLoading] = useState(true);
   const [quote, setQuote] = useState('');
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    if (pathname.startsWith('/admin') || pathname.startsWith('/seller')) {
+      setLoading(false);
+      setIsVisible(false);
+      return;
+    }
+
     // Select random quote on mount
     setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
 
@@ -54,7 +62,7 @@ export default function Preloader() {
     }, 200);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [pathname]);
 
   if (!loading) return null;
 

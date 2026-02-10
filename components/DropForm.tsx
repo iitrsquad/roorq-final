@@ -1,19 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface DropFormProps {
-  initialData?: any;
+  initialData?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    scheduled_at?: string | null;
+    status?: string | null;
+  };
 }
 
 export default function DropForm({ initialData }: DropFormProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
@@ -54,9 +61,10 @@ export default function DropForm({ initialData }: DropFormProps) {
 
       // Use replace to prevent back button issues, remove refresh to avoid session issues
       router.replace('/admin/drops');
-    } catch (error: any) {
-      console.error('Error saving drop:', error);
-      toast.error(error.message || 'Failed to save drop');
+    } catch (error: unknown) {
+      logger.error('Error saving drop', error instanceof Error ? error : undefined);
+      const message = error instanceof Error ? error.message : 'Failed to save drop';
+      toast.error(message);
     } finally {
       setLoading(false);
     }

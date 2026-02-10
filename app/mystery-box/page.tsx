@@ -1,10 +1,27 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import StructuredData from '@/components/StructuredData';
+import NotifyMeForm from '@/components/NotifyMeForm';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { breadcrumbSchema } from '@/lib/seo/schema';
 import { Package, Zap, Star } from 'lucide-react';
+
+export const metadata = buildMetadata({
+  title: 'Mystery Box',
+  description: 'Curated vintage mystery boxes with guaranteed value.',
+  path: '/mystery-box',
+  keywords: ['mystery box', 'vintage bundle', 'Roorq drops'],
+});
 
 export default function MysteryBoxPage() {
   return (
     <div className="min-h-screen flex flex-col font-sans">
+      <StructuredData
+        data={breadcrumbSchema([
+          { name: 'Home', path: '/' },
+          { name: 'Mystery Box', path: '/mystery-box' },
+        ])}
+      />
       <Navbar />
       <main className="flex-1 bg-black text-white">
         {/* Hero */}
@@ -33,16 +50,14 @@ export default function MysteryBoxPage() {
               <h3 className="text-2xl font-black uppercase tracking-widest mb-2">Sold Out</h3>
               <p className="text-sm text-gray-400 font-mono mb-6">The next drop is scheduled for Tuesday at 6 PM.</p>
               
-              <div className="flex gap-2">
-                <input 
-                  type="email" 
-                  placeholder="ENTER EMAIL FOR EARLY ACCESS" 
-                  className="bg-black border border-white/20 text-white px-4 py-3 flex-1 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-white placeholder:text-gray-600"
-                />
-                <button className="bg-white text-black px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors">
-                  Notify Me
-                </button>
-              </div>
+              <NotifyMeForm
+                interest="mystery-box"
+                placeholder="ENTER EMAIL FOR EARLY ACCESS"
+                className="flex gap-2"
+                inputClassName="bg-black border border-white/20 text-white px-4 py-3 flex-1 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-white placeholder:text-gray-600"
+                buttonClassName="bg-white text-black px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors disabled:opacity-60"
+                successMessage="You are on the mystery box list."
+              />
             </div>
           </div>
         </div>
@@ -77,9 +92,9 @@ export default function MysteryBoxPage() {
                       {tier.desc}
                     </li>
                   </ul>
-                  <button className="w-full bg-black text-white py-4 text-xs font-black uppercase tracking-widest hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                  <div className="w-full bg-black text-white py-4 text-center text-xs font-black uppercase tracking-widest opacity-60">
                     Sold Out
-                  </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -90,4 +105,3 @@ export default function MysteryBoxPage() {
     </div>
   );
 }
-

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 
 export default function OrderSuccessConfetti() {
   const searchParams = useSearchParams();
-  const paymentStatus = searchParams.get('payment');
+  const paymentStatus = searchParams?.get('payment');
 
   useEffect(() => {
     if (paymentStatus === 'success') {
@@ -18,7 +18,7 @@ export default function OrderSuccessConfetti() {
         return Math.random() * (max - min) + min;
       };
 
-      const interval: any = setInterval(function() {
+      const interval = setInterval(function() {
         const timeLeft = animationEnd - Date.now();
 
         if (timeLeft <= 0) {

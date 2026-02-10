@@ -77,8 +77,6 @@
 - **Fix:** Excluded `supabase/functions` from `tsconfig.json`
 - **Status:** ✅ Fixed
 
-### 9. ✅ Razorpay Initialization
-- **Issue:** Razorpay initialization at module level causing build issues
 - **Fix:** Moved to function-based initialization with error handling
 - **Status:** ✅ Fixed
 
@@ -164,11 +162,8 @@ Before deploying to Vercel:
    ```
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   RAZORPAY_KEY_ID=your_razorpay_key_id
-   RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-   NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id
-   RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
-   RESEND_API_KEY=your_resend_key (optional)
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   RESEND_API_KEY=your_resend_key
    ```
 
 2. **Supabase Configuration:**
@@ -176,11 +171,7 @@ Before deploying to Vercel:
    - [ ] Deploy Edge Functions
    - [ ] Set Edge Function secrets
 
-3. **Razorpay Configuration:**
-   - [ ] Configure webhook URL
-   - [ ] Set webhook secret
-
-4. **Domain Configuration:**
+3. **Domain Configuration:**
    - [ ] Connect custom domain in Vercel
    - [ ] Update DNS records
 

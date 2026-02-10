@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatINR } from '@/lib/utils/currency';
 
 interface Product {
@@ -21,9 +22,11 @@ export default function ProductCard({ product }: { product: Product }) {
     <Link href={`/products/${product.id}`} className="group block">
       <div className="relative aspect-[3/4] bg-gray-100 mb-4 overflow-hidden">
         {product.images?.[0] && (
-          <img
+          <Image
             src={product.images[0]}
             alt={product.name}
+            fill
+            sizes="(max-width: 768px) 50vw, 20vw"
             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
           />
         )}

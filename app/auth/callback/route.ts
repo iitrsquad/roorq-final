@@ -1,69 +1,142 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { applyRouteHandlerCookies, createRouteHandlerClient } from '@/lib/supabase/route';
+import { applyRateLimit } from '@/lib/auth/rate-limit';
+import { logAuthEvent } from '@/lib/auth/audit';
+import { sanitizeRedirectPath } from '@/lib/auth/redirects';
+import { validateCsrfToken } from '@/lib/auth/csrf';
 
-export async function GET(request: Request) {
+export const runtime = 'nodejs';
+
+const isValidReferralCode = (value: string) => /^[A-Za-z0-9-]{6,64}$/.test(value);
+
+const clearCsrfCookie = (response: NextResponse) => {
+  response.cookies.set('auth_csrf', '', { path: '/', maxAge: 0 });
+};
+
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get('code');
-  const type = requestUrl.searchParams.get('type'); // 'magiclink' | 'otp'
-  const redirect = requestUrl.searchParams.get('redirect') || '/shop';
   const origin = requestUrl.origin;
-  
-  // Get referral code if present (persisted through auth flow)
-  const refCode = requestUrl.searchParams.get('ref');
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const userAgent = request.headers.get('user-agent') || null;
 
-  const supabase = await createClient();
+  const code = requestUrl.searchParams.get('code');
+  const redirectParam = requestUrl.searchParams.get('redirect');
+  const sanitizedRedirect = sanitizeRedirectPath(redirectParam, origin);
+  const redirectPath = sanitizedRedirect.startsWith('/profile') ? '/' : sanitizedRedirect;
+  const csrfParam = requestUrl.searchParams.get('csrf');
+  const recovery = requestUrl.searchParams.get('recovery') === '1';
+
+  const refRaw = requestUrl.searchParams.get('ref');
+  const refCode = refRaw && isValidReferralCode(refRaw) ? refRaw : null;
+
+  const rate = await applyRateLimit({
+    identifier: ip,
+    type: 'auth_callback',
+    maxAttempts: 10,
+    windowSeconds: 60,
+    blockSeconds: 60,
+    increment: 1,
+  });
+
+  if (!rate.allowed) {
+    await logAuthEvent({
+      action: 'auth_callback',
+      status: 'blocked',
+      ip,
+      userAgent,
+      metadata: { retryAfter: rate.retryAfter },
+    });
+    const response = NextResponse.redirect(`${origin}/auth?error=rate_limited`);
+    clearCsrfCookie(response);
+    return response;
+  }
+
+  const csrfCheck = validateCsrfToken(request, csrfParam);
+  if (!csrfCheck.ok) {
+    await logAuthEvent({
+      action: 'auth_callback',
+      status: 'failed',
+      ip,
+      userAgent,
+      metadata: { message: csrfCheck.error },
+    });
+    const response = NextResponse.redirect(`${origin}/auth?error=csrf`);
+    clearCsrfCookie(response);
+    return response;
+  }
+
+  const { supabase, cookiesToSet } = createRouteHandlerClient(request);
+  const finalizeResponse = (response: NextResponse) =>
+    applyRouteHandlerCookies(response, cookiesToSet);
 
   try {
     let user = null;
+    let authMethod = 'session';
 
-    // FLOW 1: Magic Link (PKCE) - Code Exchange
     if (code) {
+      authMethod = 'magiclink';
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) {
-        console.error('Auth Exchange Error:', error);
-        // Map errors for better UX
+        await logAuthEvent({
+          action: 'auth_exchange',
+          status: 'failed',
+          ip,
+          userAgent,
+          metadata: { message: error.message },
+        });
         if (error.message.includes('expired') || error.code === 'otp_expired') {
-          return NextResponse.redirect(`${origin}/auth?error=expired`);
+          const response = NextResponse.redirect(`${origin}/auth?error=expired`);
+          clearCsrfCookie(response);
+          return finalizeResponse(response);
         }
         if (error.message.includes('invalid') || error.code === 'otp_disabled') {
-          return NextResponse.redirect(`${origin}/auth?error=invalid`);
+          const response = NextResponse.redirect(`${origin}/auth?error=invalid`);
+          clearCsrfCookie(response);
+          return finalizeResponse(response);
         }
         if (error.message.includes('used')) {
-          return NextResponse.redirect(`${origin}/auth?error=used`);
+          const response = NextResponse.redirect(`${origin}/auth?error=used`);
+          clearCsrfCookie(response);
+          return finalizeResponse(response);
         }
-        return NextResponse.redirect(`${origin}/auth?error=${encodeURIComponent(error.message)}`);
+        const response = NextResponse.redirect(
+          `${origin}/auth?error=${encodeURIComponent(error.message)}`
+        );
+        clearCsrfCookie(response);
+        return finalizeResponse(response);
       }
       user = data.user;
-    } 
-    // FLOW 2: OTP / Existing Session - Verify Session
-    else {
+    } else {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) {
-        console.error('Session Check Error:', error);
-        return NextResponse.redirect(`${origin}/auth?error=invalid_session`);
+        await logAuthEvent({
+          action: 'auth_session_check',
+          status: 'failed',
+          ip,
+          userAgent,
+          metadata: { message: error?.message ?? 'No user session' },
+        });
+        const response = NextResponse.redirect(`${origin}/auth?error=invalid_session`);
+        clearCsrfCookie(response);
+        return finalizeResponse(response);
       }
       user = data.user;
     }
 
     if (!user) {
-      return NextResponse.redirect(`${origin}/auth?error=auth_failed`);
+      const response = NextResponse.redirect(`${origin}/auth?error=auth_failed`);
+      clearCsrfCookie(response);
+      return finalizeResponse(response);
     }
 
-    // --- Centralized Post-Auth Logic ---
-
-    // 1. Check User Profile
     const { data: existingUser } = await supabase
       .from('users')
       .select('id, full_name')
       .eq('id', user.id)
       .single();
 
-    // 2. New User Handling
     if (!existingUser) {
-      // Generate unique referral code
       const referralCode = `REF-${user.id.slice(0, 8).toUpperCase()}`;
-      
-      // Create Profile
       const { error: createError } = await supabase.from('users').insert({
         id: user.id,
         email: user.email!,
@@ -71,11 +144,16 @@ export async function GET(request: Request) {
       });
 
       if (createError) {
-        console.error('Profile Creation Error:', createError);
-        // Continue anyway, user exists in Auth. Can retry profile later.
+        await logAuthEvent({
+          userId: user.id,
+          action: 'profile_create',
+          status: 'failed',
+          ip,
+          userAgent,
+          metadata: { message: createError.message },
+        });
       }
 
-      // Handle Referral attribution
       if (refCode) {
         const { data: referrer } = await supabase
           .from('users')
@@ -91,24 +169,57 @@ export async function GET(request: Request) {
           });
         }
       }
-      
-      // Redirect new users to profile completion
-      return NextResponse.redirect(`${origin}/profile?new=true`);
+
+      await logAuthEvent({
+        userId: user.id,
+        identifier: user.email ?? null,
+        action: 'auth_callback',
+        status: 'success',
+        ip,
+        userAgent,
+        metadata: { authMethod, newUser: true, recovery },
+      });
+
+      const response = NextResponse.redirect(new URL(redirectPath, origin));
+      clearCsrfCookie(response);
+      return finalizeResponse(response);
     }
 
-    // 3. Existing User Routing
-    // If profile incomplete (e.g., no name), send to profile to complete it
     if (!existingUser.full_name) {
-       return NextResponse.redirect(`${origin}/profile?setup=required`);
+      await logAuthEvent({
+        userId: user.id,
+        identifier: user.email ?? null,
+        action: 'auth_callback',
+        status: 'success',
+        ip,
+        userAgent,
+        metadata: { authMethod, profileIncomplete: true, recovery },
+      });
     }
 
-    // 4. Success Redirect
-    // Ensure the redirect URL is absolute or relative to origin to prevent open redirect vulnerabilities
-    const finalRedirect = redirect.startsWith('http') ? redirect : `${origin}${redirect}`;
-    return NextResponse.redirect(finalRedirect);
+    await logAuthEvent({
+      userId: user.id,
+      identifier: user.email ?? null,
+      action: 'auth_callback',
+      status: 'success',
+      ip,
+      userAgent,
+      metadata: { authMethod, recovery },
+    });
 
-  } catch (error: any) {
-    console.error('Callback Unexpected Error:', error);
-    return NextResponse.redirect(`${origin}/auth?error=network`);
+    const response = NextResponse.redirect(new URL(redirectPath, origin));
+    clearCsrfCookie(response);
+    return finalizeResponse(response);
+  } catch (error) {
+    await logAuthEvent({
+      action: 'auth_callback',
+      status: 'failed',
+      ip,
+      userAgent,
+      metadata: { message: error instanceof Error ? error.message : 'Unexpected error' },
+    });
+    const response = NextResponse.redirect(`${origin}/auth?error=network`);
+    clearCsrfCookie(response);
+    return finalizeResponse(response);
   }
 }

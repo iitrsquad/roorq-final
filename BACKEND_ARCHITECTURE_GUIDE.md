@@ -25,7 +25,7 @@ In a Next.js + Supabase project, the "backend" consists of:
 2. **API Routes** (`app/api/`)
    - REST endpoints for client-server communication
    - Server-side logic that can't run in the browser
-   - Integration with third-party services (payment, email, etc.)
+   - Integration with third-party services (email, analytics, etc.)
 
 3. **Server Components** (`app/**/page.tsx` with async/await)
    - Direct database queries in React components
@@ -40,7 +40,7 @@ In a Next.js + Supabase project, the "backend" consists of:
 5. **Edge Functions** (`supabase/functions/`)
    - Serverless functions for complex operations
    - Webhooks, cron jobs, background processing
-   - Email sending, payment processing
+   - Email sending, order processing
 
 6. **Type Definitions** (`lib/types/` or `src/types/`)
    - TypeScript types matching your database schema
@@ -79,15 +79,14 @@ In a Next.js + Supabase project, the "backend" consists of:
    - Referral code handling
 
 4. **Some API Routes** ✅
-   - Payment routes (`app/api/payment/create-order/route.ts`)
-   - Payment verification route
+   - Checkout route (`app/api/checkout/route.ts`)
+   - Admin order routes (`app/api/admin/orders/...`)
 
 5. **Admin Protection** ✅
    - `lib/auth/require-admin.ts` - Admin access control
    - Role-based access checking
 
 6. **Edge Functions** ✅
-   - Payment functions in `supabase/functions/`
    - Email notification functions
 
 7. **Migrations** ✅
@@ -166,10 +165,7 @@ Experiment3_k/
 │   │   │       └── route.ts         # POST /api/referrals/claim
 │   │   ├── upload/
 │   │   │   └── route.ts             # POST /api/upload (file uploads)
-│   │   └── payment/
-│   │       ├── create-order/
 │   │       │   └── route.ts         # ✅ Already exists
-│   │       └── verify/
 │   │           └── route.ts         # ✅ Already exists
 │   │
 │   ├── (pages)/                      # Your existing pages

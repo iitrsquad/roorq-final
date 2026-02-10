@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { logAuthEvent } from '@/lib/auth/audit'
 
 export type UserRole = 'customer' | 'admin' | 'super_admin'
 
@@ -21,15 +22,26 @@ export async function requireAdmin(): Promise<AdminUser> {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
+    await logAuthEvent({
+      action: 'admin_access',
+      status: 'failed',
+      metadata: { reason: 'not_authenticated' },
+    })
     redirect('/auth?error=unauthorized&message=Please+login+to+continue')
   }
-  
+
   // Fetch user's role using security definer function to avoid RLS recursion
   const { data: roleData, error: roleError } = await supabase
     .rpc('get_user_role', { user_id: user.id })
   
   if (roleError) {
-    console.error('Failed to fetch user role:', roleError)
+    await logAuthEvent({
+      userId: user.id,
+      identifier: user.email ?? null,
+      action: 'admin_access',
+      status: 'failed',
+      metadata: { reason: 'role_check_failed', message: roleError.message },
+    })
     redirect('/?error=role-check-failed')
   }
   
@@ -39,6 +51,13 @@ export async function requireAdmin(): Promise<AdminUser> {
   const allowedRoles: UserRole[] = ['admin', 'super_admin']
   
   if (!allowedRoles.includes(userRole as UserRole)) {
+    await logAuthEvent({
+      userId: user.id,
+      identifier: user.email ?? null,
+      action: 'admin_access',
+      status: 'failed',
+      metadata: { reason: 'insufficient_role', role: userRole },
+    })
     redirect('/?error=admin-access-denied&message=You+do+not+have+admin+privileges')
   }
   
@@ -47,6 +66,23 @@ export async function requireAdmin(): Promise<AdminUser> {
     email: user.email || '',
     role: userRole as UserRole
   }
+}
+
+export async function requireSuperAdmin(): Promise<AdminUser> {
+  const admin = await requireAdmin()
+
+  if (admin.role !== 'super_admin') {
+    await logAuthEvent({
+      userId: admin.id,
+      identifier: admin.email ?? null,
+      action: 'super_admin_access',
+      status: 'failed',
+      metadata: { reason: 'insufficient_role', role: admin.role },
+    })
+    redirect('/?error=super-admin-required')
+  }
+
+  return admin
 }
 
 /**

@@ -2,18 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingBag, Calendar, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Calendar, Users, UserCog, LogOut, Truck } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Products', href: '/admin/products', icon: Package },
+  { label: 'Vendors', href: '/admin/vendors', icon: Users },
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
+  { label: 'Riders', href: '/admin/riders', icon: Truck },
+  { label: 'Users', href: '/admin/users', icon: UserCog },
   { label: 'Drops', href: '/admin/drops', icon: Calendar },
   { label: 'Referrals', href: '/admin/referrals', icon: Users },
 ];
 
 export default function AdminNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
 
   return (
     <nav className="bg-white border-b border-gray-200">

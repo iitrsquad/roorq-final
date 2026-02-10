@@ -11,7 +11,7 @@
 
 When you place an order, the middleware runs on **every request**, including:
 - Page navigations
-- API route calls (`/api/payment/create-order`, `/api/payment/verify`)
+- API route calls (`/api/checkout`, `/api/admin/orders/*`)
 - Database operations
 - Static asset requests
 
@@ -46,7 +46,7 @@ if (request.nextUrl.pathname.startsWith('/api/')) {
 }
 ```
 
-**Why:** API routes (`/api/payment/*`, etc.) handle authentication internally using `createClient()` from `lib/supabase/server.ts`. They don't need middleware-level checks.
+**Why:** API routes (`/api/checkout`, `/api/admin/orders/*`, etc.) handle authentication internally using `createClient()` from `lib/supabase/server.ts`. They don't need middleware-level checks.
 
 ### 2. **Improved Error Message Filtering**
 
@@ -112,7 +112,7 @@ Middleware auth check: Auth session missing!  ❌ (confusing)
 
 1. **API Routes Handle Their Own Auth:**
    ```typescript
-   // app/api/payment/create-order/route.ts
+   // app/api/checkout/route.ts
    const supabase = await createClient(); // Server-side client
    const { data: { user } } = await supabase.auth.getUser();
    if (!user) {

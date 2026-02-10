@@ -2,12 +2,20 @@
 
 import Link from 'next/link';
 import { Instagram, Facebook, Youtube, Twitter, Shield } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
+
+const SOCIAL_LINKS = {
+  instagram: 'https://instagram.com/roorq.iitr',
+  facebook: 'https://facebook.com/roorq.iitr',
+  youtube: 'https://youtube.com/@roorq',
+  twitter: 'https://twitter.com/roorq',
+};
 
 export default function Footer() {
   const [isAdmin, setIsAdmin] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -19,7 +27,7 @@ export default function Footer() {
         }
       } catch (error) {
         // Silently handle errors
-        console.debug('Admin check error:', error);
+        logger.debug('Admin check error', error instanceof Error ? error : undefined);
       }
     };
 
@@ -44,16 +52,40 @@ export default function Footer() {
             </p>
             {/* Social Media */}
             <div className="flex space-x-4 mt-6">
-              <a href="#" className="text-gray-400 hover:text-white transition">
+              <a
+                href={SOCIAL_LINKS.instagram}
+                className="text-gray-400 hover:text-white transition"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Roorq Instagram"
+              >
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
+              <a
+                href={SOCIAL_LINKS.facebook}
+                className="text-gray-400 hover:text-white transition"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Roorq Facebook"
+              >
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
+              <a
+                href={SOCIAL_LINKS.youtube}
+                className="text-gray-400 hover:text-white transition"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Roorq YouTube"
+              >
                 <Youtube className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
+              <a
+                href={SOCIAL_LINKS.twitter}
+                className="text-gray-400 hover:text-white transition"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Roorq Twitter"
+              >
                 <Twitter className="w-5 h-5" />
               </a>
             </div>
@@ -92,6 +124,7 @@ export default function Footer() {
               <li><Link href="/about" className="hover:text-white transition">About Us</Link></li>
               <li><Link href="/terms" className="hover:text-white transition">Terms of Service</Link></li>
               <li><Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
+              <li><Link href="/cookies" className="hover:text-white transition">Cookie Policy</Link></li>
               <li><Link href="/shipping-policy" className="hover:text-white transition">Shipping Policy</Link></li>
               <li><Link href="/returns-policy" className="hover:text-white transition">Refund Policy</Link></li>
             </ul>
