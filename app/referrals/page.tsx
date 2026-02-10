@@ -145,7 +145,7 @@ export default function ReferralsPage() {
               <div className="relative z-10">
                 <h2 className="text-2xl font-black uppercase tracking-widest mb-4">Your Unique Invite Link</h2>
                 <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-                  Refer a friend — when they buy their first order, you get the same-category item free.
+                  Refer a friend - when they buy their first order, you get the same-category item free.
                 </p>
                 
                 <button 
@@ -270,7 +270,7 @@ export default function ReferralsPage() {
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-black"
             >
-              ✕
+              x
             </button>
             
             <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Share Your Link</h3>

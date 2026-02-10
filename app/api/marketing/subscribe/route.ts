@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { serverEnv } from '@/lib/env.server';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
@@ -46,10 +47,8 @@ export async function POST(request: NextRequest) {
   const config = getMailchimpConfig();
 
   if (!config) {
-    return NextResponse.json(
-      { error: 'Mailchimp is not configured.' },
-      { status: 500 }
-    );
+    logger.warn('Mailchimp is not configured. Skipping marketing signup.');
+    return NextResponse.json({ success: true, skipped: true });
   }
 
   const { apiKey, audienceId, dc } = config;
@@ -97,9 +96,13 @@ export async function POST(request: NextRequest) {
 
   const upsertPayload = await upsertResponse.json();
   if (!upsertResponse.ok) {
+    logger.warn('Mailchimp signup failed', {
+      status: upsertResponse.status,
+      detail: upsertPayload?.detail,
+    });
     return NextResponse.json(
-      { error: upsertPayload?.detail || 'Mailchimp signup failed.' },
-      { status: upsertResponse.status }
+      { success: true, skipped: true, warning: upsertPayload?.detail || 'Mailchimp signup failed.' },
+      { status: 202 }
     );
   }
 
@@ -119,9 +122,13 @@ export async function POST(request: NextRequest) {
 
     if (!tagResponse.ok) {
       const tagPayload = await tagResponse.json();
+      logger.warn('Mailchimp tags failed', {
+        status: tagResponse.status,
+        detail: tagPayload?.detail,
+      });
       return NextResponse.json(
-        { error: tagPayload?.detail || 'Signup succeeded but tags failed.' },
-        { status: 502 }
+        { success: true, warning: tagPayload?.detail || 'Signup succeeded but tags failed.' },
+        { status: 202 }
       );
     }
   }

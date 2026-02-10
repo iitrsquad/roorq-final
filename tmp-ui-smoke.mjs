@@ -33,6 +33,8 @@ page.on('pageerror', (err) => issues.push(`pageerror: ${err.message}`));
 
 async function goto(path) {
   await page.goto(`${baseUrl}${path}`, { waitUntil: 'networkidle', timeout: 30000 });
+  await waitForPreloader();
+  await dismissEntryModal();
 }
 
 async function waitForPreloader() {
@@ -57,21 +59,15 @@ async function dismissEntryModal() {
 
 try {
   await goto('/');
-  await waitForPreloader();
-  await dismissEntryModal();
   await page.waitForTimeout(2000);
   started = true;
 
   checks.push({ name: 'home page render', ok: (await page.locator('h1').count()) > 0 });
 
   await goto('/shop');
-  await waitForPreloader();
-  await dismissEntryModal();
   checks.push({ name: 'shop page opens', ok: page.url().includes('/shop') });
 
   await goto('/membership');
-  await waitForPreloader();
-  await dismissEntryModal();
   await page.getByRole('link', { name: 'Join Now' }).first().click();
   await page.waitForURL('**/contact**', { timeout: 10000 });
   checks.push({ name: 'membership Join Now works', ok: page.url().includes('/contact') });
