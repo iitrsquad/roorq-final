@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 const quotes = [
@@ -15,6 +16,7 @@ const quotes = [
   "Style is a way to say who you are without having to speak.",
   "Quality over quantity. Always.",
 ];
+
 
 export default function Preloader() {
   const pathname = usePathname() ?? '';
@@ -73,20 +75,31 @@ export default function Preloader() {
       }`}
     >
       <div className="max-w-2xl px-8 text-center">
+        <div className="mb-4 flex justify-center">
+          <Image
+            src="/roorq-final7.png"
+            alt="Roorq"
+            width={500}
+            height={500}
+            className="h-100 w-100 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0)]"
+            priority
+          />
+        </div>
+
         {/* Quote */}
-        <h1 className="text-3xl md:text-5xl font-light italic leading-tight mb-12 animate-in slide-in-from-bottom-4 duration-1000 font-playfair">
+        <h1 className="text-3xl md:text-5xl font-light italic leading-tight mb-8 animate-in slide-in-from-bottom-4 duration-1000 font-playfair">
           "{quote}"
         </h1>
-        
+
         {/* Loading Indicator */}
-        <div className="flex flex-col items-center gap-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/80">
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/80 -mt-2">
             ROORQ.COM
           </p>
-          
+
           {/* Minimal Progress Line */}
           <div className="w-48 h-[1px] bg-black/10 relative overflow-hidden">
-            <div 
+            <div
               className="absolute top-0 left-0 h-full bg-black transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
             />
