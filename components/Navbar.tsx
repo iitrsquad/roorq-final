@@ -520,80 +520,88 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-white z-50 md:hidden overflow-y-auto animate-in slide-in-from-left">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-black text-white">
-            <span className="font-black text-xl tracking-tighter">MENU</span>
-            <button onClick={() => setIsMenuOpen(false)}>
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="p-4">
-            <ul className="space-y-6">
-              {NAVIGATION_ITEMS.map((item) => (
-                <li key={item.label}>
-                  <div className="flex justify-between items-center">
-                    <Link 
-                      href={item.href} 
-                      className={`text-xl font-black uppercase tracking-tighter ${item.isRed ? 'text-red-600' : 'text-black'}`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  </div>
-                  {/* Flattened mobile sub-menu for key items */}
-                  {item.dropdown && (
-                    <ul className="mt-4 pl-4 space-y-3 border-l-2 border-gray-100">
-                      {item.dropdown[0].links.slice(0, 4).map((link, idx) => (
-                        <li key={idx}>
-                          <Link 
-                            href={link.href}
-                            className="text-sm font-bold text-gray-500 uppercase tracking-wide block"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            {link.label}
-                          </Link>
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            aria-label="Close menu overlay"
+            className="absolute inset-0 bg-black/35 backdrop-blur-[1px]"
+            onClick={() => setIsMenuOpen(false)}
+          />
+
+          <div className="relative h-full w-[86%] max-w-sm bg-white overflow-y-auto animate-in slide-in-from-left shadow-[8px_0_24px_rgba(0,0,0,0.25)]">
+            <div className="sticky top-0 p-4 border-b border-gray-200 flex justify-between items-center bg-black text-white z-10">
+              <span className="font-black text-xl tracking-tighter">MENU</span>
+              <button onClick={() => setIsMenuOpen(false)}>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <ul className="space-y-6">
+                {NAVIGATION_ITEMS.map((item) => (
+                  <li key={item.label}>
+                    <div className="flex justify-between items-center">
+                      <Link
+                        href={item.href}
+                        className={`text-xl font-black uppercase tracking-tighter ${item.isRed ? 'text-red-600' : 'text-black'}`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    </div>
+                    {/* Flattened mobile sub-menu for key items */}
+                    {item.dropdown && (
+                      <ul className="mt-4 pl-4 space-y-3 border-l-2 border-gray-100">
+                        {item.dropdown[0].links.slice(0, 4).map((link, idx) => (
+                          <li key={idx}>
+                            <Link
+                              href={link.href}
+                              className="text-sm font-bold text-gray-500 uppercase tracking-wide block"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              {link.label}
+                            </Link>
+                          </li>
+                        ))}
+                        <li>
+                          <Link href={item.href} className="text-sm font-black underline uppercase" onClick={() => setIsMenuOpen(false)}>View All</Link>
                         </li>
-                      ))}
-                      <li>
-                        <Link href={item.href} className="text-sm font-black underline uppercase" onClick={() => setIsMenuOpen(false)}>View All</Link>
-                      </li>
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 border-t border-gray-100 pt-8">
-              {user ? (
-                <>
-                  {(userRole === 'admin' || userRole === 'super_admin') && (
-                    <Link href="/admin" className="flex items-center gap-4 text-lg font-bold uppercase mb-4 text-red-600" onClick={() => setIsMenuOpen(false)}>
-                      <UserIcon className="w-6 h-6" /> Admin Dashboard
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8 border-t border-gray-100 pt-8">
+                {user ? (
+                  <>
+                    {(userRole === 'admin' || userRole === 'super_admin') && (
+                      <Link href="/admin" className="flex items-center gap-4 text-lg font-bold uppercase mb-4 text-red-600" onClick={() => setIsMenuOpen(false)}>
+                        <UserIcon className="w-6 h-6" /> Admin Dashboard
+                      </Link>
+                    )}
+                    <Link href="/profile" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
+                      <UserIcon className="w-6 h-6" /> My Account
                     </Link>
-                  )}
-                  <Link href="/profile" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
-                    <UserIcon className="w-6 h-6" /> My Account
+                    <Link href="/orders" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
+                      My Orders
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-4 text-lg font-bold uppercase text-red-600"
+                    >
+                      <LogOut className="w-6 h-6" /> Logout
+                    </button>
+                  </>
+                ) : (
+                  <Link href="/auth" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
+                    <UserIcon className="w-6 h-6" /> Sign In
                   </Link>
-                  <Link href="/orders" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
-                    My Orders
-                  </Link>
-                  <button 
-                    onClick={() => {
-                      handleLogout();
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center gap-4 text-lg font-bold uppercase text-red-600"
-                  >
-                    <LogOut className="w-6 h-6" /> Logout
-                  </button>
-                </>
-              ) : (
-                <Link href="/auth" className="flex items-center gap-4 text-lg font-bold uppercase mb-4" onClick={() => setIsMenuOpen(false)}>
-                  <UserIcon className="w-6 h-6" /> Sign In
+                )}
+                <Link href="/faq" className="flex items-center gap-4 text-lg font-bold uppercase mt-4" onClick={() => setIsMenuOpen(false)}>
+                  Help & FAQ
                 </Link>
-              )}
-              <Link href="/faq" className="flex items-center gap-4 text-lg font-bold uppercase mt-4" onClick={() => setIsMenuOpen(false)}>
-                Help & FAQ
-              </Link>
+              </div>
             </div>
           </div>
         </div>
