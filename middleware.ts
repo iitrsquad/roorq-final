@@ -27,61 +27,65 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    // If env is missing, skip auth middleware rather than breaking pages
+    return response;
+  }
+
   // Only process auth for non-static files and non-API routes
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          // Preserve existing cookies and set proper path/domain
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-            path: '/', // Ensure cookies are available across all routes
-            sameSite: 'lax' as const, // Better for navigation
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-            path: '/', // Ensure cookies are available across all routes
-            sameSite: 'lax' as const,
-          });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-            path: '/',
-            sameSite: 'lax' as const,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-            path: '/',
-            sameSite: 'lax' as const,
-          });
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      get(name: string) {
+        return request.cookies.get(name)?.value;
       },
-    }
-  );
+      set(name: string, value: string, options: CookieOptions) {
+        // Preserve existing cookies and set proper path/domain
+        request.cookies.set({
+          name,
+          value,
+          ...options,
+          path: '/', // Ensure cookies are available across all routes
+          sameSite: 'lax' as const, // Better for navigation
+        });
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        response.cookies.set({
+          name,
+          value,
+          ...options,
+          path: '/', // Ensure cookies are available across all routes
+          sameSite: 'lax' as const,
+        });
+      },
+      remove(name: string, options: CookieOptions) {
+        request.cookies.set({
+          name,
+          value: '',
+          ...options,
+          path: '/',
+          sameSite: 'lax' as const,
+        });
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        response.cookies.set({
+          name,
+          value: '',
+          ...options,
+          path: '/',
+          sameSite: 'lax' as const,
+        });
+      },
+    },
+  });
 
   // Refreshing the auth token with proper error handling
   // This prevents session invalidation on network errors or temporary issues

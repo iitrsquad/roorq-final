@@ -39,7 +39,7 @@ export default function CartPage() {
 
   const loadCart = useCallback(async () => {
     try {
-    const cartData = JSON.parse(localStorage.getItem('cart') || '[]');
+    const cartData = JSON.parse(localStorage.getItem('cart') || '[]') as CartItem[];
       
       if (cartData.length === 0) {
         setCart([]);
@@ -47,47 +47,55 @@ export default function CartPage() {
         return;
       }
     
-    // Fetch product details for each cart item
-    const products = await Promise.all(
-      cartData.map(async (item: CartItem) => {
-          const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', item.productId)
-            .eq('is_active', true)
-          .single();
-        
-          if (error || !data) {
-            logger.warn(`Product ${item.productId} not found or inactive`);
-            return null;
-          }
-          
-          // Check stock availability
-          const availableStock = data.stock_quantity - data.reserved_quantity;
-          if (availableStock <= 0) {
-            toast.error(`${data.name} is out of stock`);
-            return null;
-          }
-          
-          // Adjust quantity if it exceeds available stock
-          if (item.quantity > availableStock) {
-            toast(`${data.name}: Only ${availableStock} available. Quantity adjusted.`, { icon: '⚠️' });
-            item.quantity = availableStock;
-          }
-          
-        return {
-          ...item,
-          product: data,
-        };
-      })
-    );
+      const productIds = Array.from(new Set(cartData.map((item: CartItem) => item.productId)));
+      const { data: productRows, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', productIds)
+        .eq('is_active', true);
 
-      // Filter out null products and update cart
-      const validProducts = products.filter((p) => p !== null) as CartItem[];
+      if (productsError) {
+        logger.error('Failed to load cart products', productsError instanceof Error ? productsError : undefined);
+        throw productsError;
+      }
+
+      const productMap = new Map((productRows ?? []).map((product) => [product.id, product]));
+      let hasChanges = false;
+
+      const validProducts = cartData.reduce<CartItem[]>((acc, item) => {
+        const product = productMap.get(item.productId);
+        if (!product) {
+          logger.warn(`Product ${item.productId} not found or inactive`);
+          hasChanges = true;
+          return acc;
+        }
+
+        const availableStock = product.stock_quantity - product.reserved_quantity;
+        if (availableStock <= 0) {
+          toast.error(`${product.name} is out of stock`);
+          hasChanges = true;
+          return acc;
+        }
+
+        let nextQuantity = item.quantity;
+        if (nextQuantity > availableStock) {
+          toast(`${product.name}: Only ${availableStock} available. Quantity adjusted.`, { icon: '⚠️' });
+          nextQuantity = availableStock;
+          hasChanges = true;
+        }
+
+        acc.push({
+          ...item,
+          quantity: nextQuantity,
+          product,
+        });
+        return acc;
+      }, []);
+
       setCart(validProducts);
       
       // Update localStorage with valid items only
-      if (validProducts.length !== cartData.length) {
+      if (hasChanges || validProducts.length !== cartData.length) {
         localStorage.setItem('cart', JSON.stringify(validProducts.map(({ product, ...item }) => item)));
         window.dispatchEvent(new Event('cartUpdated'));
       }

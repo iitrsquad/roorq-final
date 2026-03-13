@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useMemo, useState, useRef, useEffect } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { ShoppingCart, Menu, X, User as UserIcon, Search, ChevronDown, LogOut } from 'lucide-react';
@@ -86,7 +87,7 @@ const NAVIGATION_ITEMS = [
   },
   {
     label: "KIDS VINTAGE",
-    href: '/shop?category=kids',
+    href: '/shop?gender=kids',
     dropdown: null
   },
   {
@@ -175,13 +176,9 @@ export default function Navbar() {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('cartUpdated', handleCartUpdate);
 
-    // Poll for cart updates (fallback for same-tab updates)
-    const interval = setInterval(updateCartCount, 1000);
-
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('cartUpdated', handleCartUpdate);
-      clearInterval(interval);
     };
   }, []);
 
@@ -344,8 +341,16 @@ export default function Navbar() {
 
             {/* Center: Logo */}
             <div className="flex-1 flex justify-center">
-              <Link href="/" className="text-3xl md:text-4xl font-extrabold tracking-tighter hover:text-red-600 transition-colors">
-                roorq.
+              <Link href="/" className="flex items-center gap-2 hover:text-red-600 transition-colors">
+                <Image
+                  src="/roorq-final7.png"
+                  alt="Roorq"
+                  width={36}
+                  height={36}
+                  className="h-9 w-9 object-contain"
+                  priority
+                />
+                <span className="text-3xl md:text-4xl font-extrabold tracking-tighter">roorq.</span>
               </Link>
             </div>
 

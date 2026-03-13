@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { serverEnv } from '@/lib/env.server';
 import { logger } from '@/lib/logger';
+import { applyRateLimit } from '@/lib/auth/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -44,6 +45,28 @@ function buildTags(interests: string[], brands: string[]) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || request.ip
+    || 'unknown';
+
+  const rateLimit = await applyRateLimit({
+    identifier: ip,
+    type: 'marketing_subscribe',
+    maxAttempts: 10,
+    windowSeconds: 3600,
+    blockSeconds: 3600,
+    increment: 1,
+  });
+
+  if (!rateLimit.allowed) {
+    const response = NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+    if (rateLimit.retryAfter) {
+      response.headers.set('Retry-After', String(rateLimit.retryAfter));
+    }
+    return response;
+  }
+
   const config = getMailchimpConfig();
 
   if (!config) {

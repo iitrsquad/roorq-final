@@ -37,6 +37,8 @@ export const serverEnv = {
   SENTRY_ENVIRONMENT: optionalServerEnv('SENTRY_ENVIRONMENT'),
   SENTRY_TRACES_SAMPLE_RATE: optionalServerEnv('SENTRY_TRACES_SAMPLE_RATE'),
   SENTRY_DEBUG: parseBoolean('SENTRY_DEBUG', false),
+  TURNSTILE_SECRET_KEY: optionalServerEnv('TURNSTILE_SECRET_KEY'),
+  CONTACT_INBOX_EMAIL: optionalServerEnv('CONTACT_INBOX_EMAIL'),
 }
 
 export { requireServerEnv, optionalServerEnv, parseBoolean }

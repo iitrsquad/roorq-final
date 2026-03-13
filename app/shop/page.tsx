@@ -37,8 +37,9 @@ export default async function ShopPage({
     query = query.eq('gender', searchParams.gender);
   }
 
-  if (searchParams.search) {
-    query = query.or(`name.ilike.%${searchParams.search}%,description.ilike.%${searchParams.search}%,brand.ilike.%${searchParams.search}%`);
+  const searchTerm = searchParams.search ?? searchParams.tag;
+  if (searchTerm) {
+    query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%`);
   }
 
   // Sorting
@@ -65,15 +66,43 @@ export default async function ShopPage({
     // Graceful fallback: Show empty state instead of crashing
   }
 
+  const categoryLabels: Record<string, string> = {
+    't-shirt': 'T-Shirts',
+    jacket: 'Jackets',
+    sweater: 'Sweaters',
+    jeans: 'Jeans',
+    trousers: 'Trousers',
+    shoes: 'Shoes',
+    accessories: 'Accessories',
+    skirt: 'Skirts',
+    sportswear: 'Sportswear',
+    sale: 'Sale',
+  };
+
+  const genderLabels: Record<string, string> = {
+    men: "Men's",
+    women: "Women's",
+    kids: "Kids'",
+  };
+
+  const genderLabel = searchParams.gender
+    ? (genderLabels[searchParams.gender] ?? `${searchParams.gender}'s`)
+    : '';
+  const categoryLabel = searchParams.category
+    ? (categoryLabels[searchParams.category] ?? searchParams.category)
+    : 'All Vintage';
+
   const categories = [
     { name: 'All', value: '' },
     { name: 'Jackets', value: 'jacket' },
     { name: 'Sweaters', value: 'sweater' },
     { name: 'T-Shirts', value: 't-shirt' },
     { name: 'Jeans', value: 'jeans' },
+    { name: 'Skirts', value: 'skirt' },
     { name: 'Trousers', value: 'trousers' },
     { name: 'Shoes', value: 'shoes' },
     { name: 'Accessories', value: 'accessories' },
+    { name: 'Sportswear', value: 'sportswear' },
   ];
 
   return (
@@ -96,7 +125,7 @@ export default async function ShopPage({
       {/* Header / Banner */}
       <div className="bg-gray-100 py-12 px-4 text-center border-b border-gray-200">
         <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4">
-          {searchParams.gender ? `${searchParams.gender}'s` : ''} {searchParams.category || 'All Vintage'}
+          {genderLabel ? `${genderLabel} ` : ''}{categoryLabel}
         </h1>
         <p className="text-gray-500 font-mono uppercase tracking-widest text-xs md:text-sm max-w-2xl mx-auto">
           {products?.length || 0} Items Found • 100% Authentic • Cleaned & Ready to Wear

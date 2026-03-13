@@ -64,6 +64,8 @@ export const validateEnv = (): EnvValidationResult => {
     SUPABASE_SERVICE_ROLE_KEY,
     SENTRY_DSN,
     SENTRY_TRACES_SAMPLE_RATE,
+    TURNSTILE_SECRET_KEY,
+    CONTACT_INBOX_EMAIL,
   } = serverEnv
 
   if ((MAILCHIMP_API_KEY && !MAILCHIMP_AUDIENCE_ID) || (!MAILCHIMP_API_KEY && MAILCHIMP_AUDIENCE_ID)) {
@@ -78,6 +80,18 @@ export const validateEnv = (): EnvValidationResult => {
     errors.push('RESEND_API_KEY is required in production for order notifications.')
   } else if (appEnv === 'staging' && !RESEND_API_KEY) {
     warnings.push('RESEND_API_KEY is not set; email notifications will be disabled.')
+  }
+
+  if (!publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+    warnings.push('NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set; contact form captcha will be disabled.')
+  }
+
+  if (!TURNSTILE_SECRET_KEY) {
+    warnings.push('TURNSTILE_SECRET_KEY is not set; captcha verification will be skipped.')
+  }
+
+  if (!CONTACT_INBOX_EMAIL) {
+    warnings.push('CONTACT_INBOX_EMAIL is not set; contact form will default to support@roorq.com.')
   }
 
   if ((appEnv === 'staging' || appEnv === 'production') && !SUPABASE_SERVICE_ROLE_KEY) {

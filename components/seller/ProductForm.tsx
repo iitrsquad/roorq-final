@@ -201,9 +201,11 @@ export default function VendorProductForm({ initialData }: { initialData?: Produ
             <option value="jacket">Jacket</option>
             <option value="jeans">Jeans</option>
             <option value="sweater">Sweater</option>
+            <option value="skirt">Skirt</option>
             <option value="trousers">Trousers</option>
             <option value="accessories">Accessories</option>
             <option value="shoes">Shoes</option>
+            <option value="sportswear">Sportswear</option>
           </select>
         </div>
         <div>

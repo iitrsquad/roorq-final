@@ -7,8 +7,6 @@ import toast from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
 import { getOrCreateCsrfToken } from '@/lib/auth/csrf-client'
 
-const STORAGE_BUCKET = 'vendor-documents'
-
 type DocumentState = {
   documentType: 'pan_card' | 'gst_certificate' | 'bank_proof' | 'address_proof' | 'identity_proof' | 'business_registration'
   documentUrl: string
@@ -109,23 +107,34 @@ export default function VendorSignupPage() {
         toast.error('Please sign in again.')
         return
       }
-      const ext = file.name.split('.').pop() || 'pdf'
-      const filePath = `${authData.user.id}/${docType}-${Date.now()}.${ext}`
       setLoading(true)
       try {
-        const { error: uploadError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .upload(filePath, file, { upsert: true })
-        if (uploadError) throw uploadError
+        const formData = new FormData()
+        formData.append('docType', docType)
+        formData.append('file', file)
+        if (documentNumber) {
+          formData.append('documentNumber', documentNumber)
+        }
 
-        const { data: publicUrl } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath)
-        if (!publicUrl?.publicUrl) {
+        const res = await fetch('/api/storage/vendor-documents', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        })
+
+        const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data?.error || 'Upload failed')
+        }
+
+        const documentUrl = data?.publicUrl || data?.path
+        if (!documentUrl) {
           throw new Error('Failed to get file URL')
         }
 
         setDocuments((prev) => {
           const filtered = prev.filter((doc) => doc.documentType !== docType)
-          return [...filtered, { documentType: docType, documentUrl: publicUrl.publicUrl, documentNumber }]
+          return [...filtered, { documentType: docType, documentUrl, documentNumber }]
         })
         toast.success('Document uploaded')
       } catch (error: unknown) {
@@ -299,6 +308,7 @@ export default function VendorSignupPage() {
                     <p className="text-sm font-semibold mb-2">{doc.label}</p>
                     <input
                       type="file"
+                      accept="image/*,application/pdf"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) handleFileUpload(doc.type as DocumentState['documentType'], file)

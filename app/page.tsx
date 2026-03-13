@@ -203,9 +203,9 @@ export default async function Home() {
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] bg-white p-6 text-center shadow-xl border border-black">
               <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">Shop Men's</h3>
               <div className="flex flex-col gap-2 text-xs font-bold tracking-widest uppercase">
-                <Link href="/shop?category=mens" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Men's Vintage</Link>
-                <Link href="/shop?category=t-shirt" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Tops & T-Shirts</Link>
-                <Link href="/shop?category=trousers" className="hover:text-gray-500 transition">Vintage Trousers</Link>
+                <Link href="/shop?gender=men" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Men's Vintage</Link>
+                <Link href="/shop?category=t-shirt&gender=men" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Tops & T-Shirts</Link>
+                <Link href="/shop?category=trousers&gender=men" className="hover:text-gray-500 transition">Vintage Trousers</Link>
               </div>
             </div>
           </div>
@@ -223,9 +223,9 @@ export default async function Home() {
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] bg-white p-6 text-center shadow-xl border border-black">
               <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">Shop Women's</h3>
               <div className="flex flex-col gap-2 text-xs font-bold tracking-widest uppercase">
-                <Link href="/shop?category=womens" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Women's Vintage</Link>
-                <Link href="/shop?category=womens" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Vintage Tops</Link>
-                <Link href="/shop?category=womens" className="hover:text-gray-500 transition">Skirts & Trousers</Link>
+                <Link href="/shop?gender=women" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Women's Vintage</Link>
+                <Link href="/shop?category=t-shirt&gender=women" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Vintage Tops</Link>
+                <Link href="/shop?category=skirt&gender=women" className="hover:text-gray-500 transition">Skirts</Link>
               </div>
             </div>
           </div>
@@ -245,7 +245,7 @@ export default async function Home() {
               <div className="flex flex-col gap-2 text-xs font-bold tracking-widest uppercase">
                 <Link href="/shop?category=sale" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Men's Outlet</Link>
                 <Link href="/shop?category=sale" className="hover:text-gray-500 transition border-b border-gray-200 pb-1">Women's Outlet</Link>
-                <Link href="/shop?category=kids" className="hover:text-gray-500 transition">Kids Outlet</Link>
+                <Link href="/shop?category=sale&gender=kids" className="hover:text-gray-500 transition">Kids Outlet</Link>
               </div>
             </div>
           </div>

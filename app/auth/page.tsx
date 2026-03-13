@@ -75,6 +75,7 @@ export default function AuthPage() {
   const stepParam = searchParams?.get("step");
   const isMobileFormStep = stepParam === "form";
   const supabase = createClient();
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/+$/, "");
 
   useEffect(() => {
     const existing = readCookie("auth_csrf");
@@ -143,7 +144,7 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const callbackParams = buildCallbackParams();
-      const redirectTo = `${window.location.origin}/auth/callback?${callbackParams.toString()}`;
+      const redirectTo = `${siteUrl}/auth/callback?${callbackParams.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

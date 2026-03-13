@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Instagram, Facebook, Youtube, Twitter, Shield } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -46,7 +47,16 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 md:gap-12">
           {/* Company Info */}
           <div className="col-span-2 md:col-span-1">
-            <h3 className="text-xl font-black tracking-tighter mb-4">Roorq.com</h3>
+            <div className="flex items-center gap-3 mb-4">
+              <Image
+                src="/roorq-final7.png"
+                alt="Roorq"
+                width={44}
+                height={44}
+                className="h-11 w-11 object-contain"
+              />
+              <h3 className="text-xl font-black tracking-tighter">Roorq.com</h3>
+            </div>
             <p className="text-gray-400 text-xs font-medium mb-4 leading-relaxed uppercase tracking-wide">
               Campus-exclusive weekly-drop fashion platform for IIT Roorkee. Authentic vintage at unbeatable prices.
             </p>
@@ -95,9 +105,9 @@ export default function Footer() {
           <div>
             <h4 className="font-black uppercase text-xs mb-4 tracking-widest">SHOP</h4>
             <ul className="space-y-2 text-xs font-bold text-gray-500 uppercase tracking-wide">
-              <li><Link href="/shop?category=mens" className="hover:text-white transition">Men's Vintage</Link></li>
-              <li><Link href="/shop?category=womens" className="hover:text-white transition">Women's Vintage</Link></li>
-              <li><Link href="/shop?category=kids" className="hover:text-white transition">Kids Vintage</Link></li>
+              <li><Link href="/shop?gender=men" className="hover:text-white transition">Men's Vintage</Link></li>
+              <li><Link href="/shop?gender=women" className="hover:text-white transition">Women's Vintage</Link></li>
+              <li><Link href="/shop?gender=kids" className="hover:text-white transition">Kids Vintage</Link></li>
               <li><Link href="/shop?category=sportswear" className="hover:text-white transition">Sportswear</Link></li>
               <li><Link href="/shop?category=sale" className="hover:text-white transition">Outlet</Link></li>
             </ul>

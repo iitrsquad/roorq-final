@@ -375,7 +375,7 @@ export default function CheckoutPage() {
                         : paymentMethod === 'upi' ? 'text-gray-300' : 'text-gray-500'
                     }`}>
                       {!showUPI 
-                        ? 'dY" Unlocks after your first successful COD delivery.' 
+                        ? 'Unlocks after your first successful COD delivery.' 
                         : 'Instant payment via UPI apps (GPay, PhonePe, Paytm).'}
                     </div>
                   </div>
@@ -423,7 +423,7 @@ export default function CheckoutPage() {
               </button>
               
               <p className="text-center text-[10px] text-gray-400 mt-4 uppercase font-bold tracking-widest">
-                Secure Checkout ??? 24h Delivery
+                Secure Checkout • 24h Delivery
               </p>
             </div>
           </div>

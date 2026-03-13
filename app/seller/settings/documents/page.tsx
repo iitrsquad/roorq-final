@@ -1,10 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
-
-const STORAGE_BUCKET = 'vendor-documents'
 
 const DOCS = [
   { label: 'PAN Card', type: 'pan_card' },
@@ -16,37 +13,28 @@ const DOCS = [
 ] as const
 
 export default function SellerDocumentsPage() {
-  const supabase = useMemo(() => createClient(), [])
   const [loading, setLoading] = useState(false)
 
   const handleUpload = async (docType: typeof DOCS[number]['type'], file?: File) => {
     if (!file) return
     setLoading(true)
     try {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) throw new Error('Please sign in')
+      const formData = new FormData()
+      formData.append('docType', docType)
+      formData.append('file', file)
+      formData.append('persist', 'true')
 
-      const ext = file.name.split('.').pop() || 'pdf'
-      const filePath = `${auth.user.id}/${docType}-${Date.now()}.${ext}`
+      const res = await fetch('/api/storage/vendor-documents', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      })
 
-      const { error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(filePath, file, { upsert: true })
-      if (uploadError) throw uploadError
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.error || 'Upload failed')
+      }
 
-      const { data: publicUrl } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath)
-      if (!publicUrl?.publicUrl) throw new Error('Failed to get document URL')
-
-      const { error: insertError } = await supabase
-        .from('vendor_documents')
-        .insert({
-          vendor_id: auth.user.id,
-          document_type: docType,
-          document_url: publicUrl.publicUrl,
-          status: 'pending',
-        })
-
-      if (insertError) throw insertError
       toast.success('Document uploaded')
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Upload failed')
@@ -64,6 +52,7 @@ export default function SellerDocumentsPage() {
             <p className="font-semibold mb-2">{doc.label}</p>
             <input
               type="file"
+              accept="image/*,application/pdf"
               disabled={loading}
               onChange={(e) => handleUpload(doc.type, e.target.files?.[0])}
             />

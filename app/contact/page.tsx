@@ -4,6 +4,7 @@ import StructuredData from '@/components/StructuredData';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { breadcrumbSchema } from '@/lib/seo/schema';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import ContactForm from '@/components/ContactForm';
 
 export const metadata = buildMetadata({
   title: 'Contact',
@@ -53,23 +54,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <form className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold uppercase mb-2">Name</label>
-              <input type="text" className="w-full border border-gray-300 p-3 focus:border-black outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold uppercase mb-2">Email</label>
-              <input type="email" className="w-full border border-gray-300 p-3 focus:border-black outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold uppercase mb-2">Message</label>
-              <textarea rows={5} className="w-full border border-gray-300 p-3 focus:border-black outline-none"></textarea>
-            </div>
-            <button className="bg-black text-white px-8 py-3 uppercase font-black tracking-widest hover:bg-gray-800 w-full">
-              Send Message
-            </button>
-          </form>
+          <ContactForm />
         </div>
       </main>
       <Footer />
