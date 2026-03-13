@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { getOrCreateCsrfToken } from '@/lib/auth/csrf-client'
 
 const STATUS_OPTIONS = [
   'pending',
@@ -29,25 +29,37 @@ export default function VendorOrderStatusClient({
   initialTrackingNumber,
   initialTrackingUrl,
 }: VendorOrderStatusClientProps) {
-  const supabase = useMemo(() => createClient(), [])
+  const [csrfToken, setCsrfToken] = useState('')
   const [status, setStatus] = useState(initialStatus)
   const [trackingNumber, setTrackingNumber] = useState(initialTrackingNumber ?? '')
   const [trackingUrl, setTrackingUrl] = useState(initialTrackingUrl ?? '')
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
+    if (!csrfToken) {
+      const token = getOrCreateCsrfToken()
+      setCsrfToken(token)
+      if (!token) {
+        toast.error('Security token missing. Please refresh.')
+        return
+      }
+    }
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('vendor_orders')
-        .update({
+      const res = await fetch(`/api/vendor/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           status,
-          tracking_number: trackingNumber || null,
-          tracking_url: trackingUrl || null,
-        })
-        .eq('id', orderId)
-
-      if (error) throw error
+          trackingNumber: trackingNumber || null,
+          trackingUrl: trackingUrl || null,
+          csrf: csrfToken || getOrCreateCsrfToken(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update order')
+      }
       toast.success('Order updated')
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Failed to update order')
