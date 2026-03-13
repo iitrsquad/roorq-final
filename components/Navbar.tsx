@@ -362,12 +362,24 @@ export default function Navbar() {
               
               {/* User Menu */}
               <div className="relative" ref={userMenuRef}>
-                <button 
-                  className="p-2 hover:text-gray-600"
-                  onClick={handleUserMenuClick}
-                >
-                  <UserIcon className="w-5 h-5" />
-                </button>
+                {user ? (
+                  <button 
+                    className="p-2 hover:text-gray-600"
+                    onClick={handleUserMenuClick}
+                    aria-haspopup="true"
+                    aria-expanded={isUserMenuOpen}
+                  >
+                    <UserIcon className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <Link
+                    href="/auth"
+                    className="p-2 hover:text-gray-600"
+                    aria-label="Sign in"
+                  >
+                    <UserIcon className="w-5 h-5" />
+                  </Link>
+                )}
                 
                 {/* User Dropdown Menu */}
                 {isUserMenuOpen && user && (
