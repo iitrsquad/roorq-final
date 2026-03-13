@@ -27,6 +27,11 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Skip auth middleware for auth pages themselves to avoid interfering with sign-in
+  if (pathname.startsWith('/auth')) {
+    return response;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
