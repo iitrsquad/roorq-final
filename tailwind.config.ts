@@ -13,8 +13,8 @@ const config: Config = {
         foreground: "var(--foreground)",
       },
       fontFamily: {
-        satoshi: ['Satoshi', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        sans: ['Satoshi', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        poppins: ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
     },
   },

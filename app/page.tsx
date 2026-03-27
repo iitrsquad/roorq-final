@@ -30,30 +30,30 @@ const FALLBACK_STYLE_IMAGES: Record<string, string> = {
 
 const PROMO_SLIDES = [
   {
-    title: 'Fresh vintage that actually feels browsable.',
-    subtitle: 'Daily drop',
+    title: 'Drop 001 — The IITR Edit is live.',
+    subtitle: 'Drop 001',
     description:
-      'Swipe through clean product pages, low-noise search, and category-led discovery built to keep conversion high.',
-    href: '/shop?sort=newest',
-    cta: 'See new arrivals',
+      '28 March, 6 PM. Hand-picked vintage pieces curated exclusively for IIT Roorkee. Limited stock. Once sold, gone forever.',
+    href: '/shop',
+    cta: 'Shop the drop',
     image: 'https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=1400&q=80',
   },
   {
-    title: 'Soft tailoring, denim, and statement pieces in one feed.',
-    subtitle: 'Curated style',
+    title: 'Every piece has a verified Story Score.',
+    subtitle: 'Only on Roorq',
     description:
-      'Shop by mood instead of endless filters. The homepage now behaves like a marketplace, not a static brochure.',
-    href: '/shop?gender=women',
-    cta: 'Browse women',
+      'Origin. Era. Brand. Culture. Condition — each rated 1 to 10 by our team. Not just thrift. Story-Scored vintage.',
+    href: '/shop',
+    cta: 'See how it works',
     image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1400&q=80',
   },
   {
-    title: 'Sell faster with sharper listings and cleaner discovery.',
+    title: 'Got pieces with a story? List them here.',
     subtitle: 'Seller growth',
     description:
-      'Public storefronts, scroll-first product cards, and a stronger home feed make it easier to convert interest into orders.',
+      'Your own storefront. Your own audience. We handle payments and discovery — you handle the finds.',
     href: '/sell',
-    cta: 'Start selling',
+    cta: 'Sell on Roorq',
     image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1400&q=80',
   },
 ]
@@ -120,6 +120,7 @@ export default async function Home() {
 
   const [
     { data: products },
+    { data: heroSlotProducts },
     { count: listingCount },
     { count: sellerCount },
     { count: freshCount },
@@ -127,12 +128,21 @@ export default async function Home() {
     supabase
       .from('products')
       .select(
-        'id, name, price, size, images, category, gender, brand, views_count, sales_count, stock_quantity, reserved_quantity'
+        'id, name, price, size, images, category, gender, brand, views_count, sales_count, stock_quantity, reserved_quantity, hero_image, hero_position'
       )
       .eq('is_active', true)
       .eq('approval_status', 'approved')
       .order('created_at', { ascending: false })
       .limit(24),
+    // Hero-slot products: up to 10, ordered by hero_position 1–10
+    supabase
+      .from('products')
+      .select('id, name, price, images, hero_image, hero_position')
+      .eq('is_active', true)
+      .eq('approval_status', 'approved')
+      .not('hero_position', 'is', null)
+      .order('hero_position', { ascending: true })
+      .limit(10),
     supabase
       .from('products')
       .select('*', { count: 'exact', head: true })
@@ -152,7 +162,11 @@ export default async function Home() {
   ])
 
   const liveProducts = (products ?? []) as MarketplaceProduct[]
-  const heroProducts = liveProducts.filter(isProductImage).slice(0, 3)
+
+  // Only show products explicitly assigned a hero_position (1–10)
+  // Never fall back to general listings — hero is curated drop content only
+  const heroSlots = (heroSlotProducts ?? []) as MarketplaceProduct[]
+  const heroProducts = heroSlots
   const styleTiles = getStyleTiles(liveProducts)
   const trendingProducts = getTrendingProducts(liveProducts)
 

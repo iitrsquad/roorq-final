@@ -30,8 +30,8 @@ export default function HomePromoCarousel({ slides }: HomePromoCarouselProps) {
   }, [slides.length])
 
   return (
-    <section className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="overflow-hidden rounded-[34px] bg-slate-900 text-white shadow-[0_30px_60px_rgba(15,23,42,0.16)]">
+    <section className="w-full py-8">
+      <div className="overflow-hidden rounded-[28px] bg-slate-900 text-white shadow-[0_30px_60px_rgba(15,23,42,0.16)] mx-4 sm:mx-6 lg:mx-0 lg:rounded-none">
         <div
           className="flex transition-transform duration-700 ease-out"
           style={{ transform: `translateX(-${activeIndex * 100}%)` }}
@@ -41,7 +41,7 @@ export default function HomePromoCarousel({ slides }: HomePromoCarouselProps) {
               key={slide.title}
               className="grid min-w-full gap-0 lg:grid-cols-[0.38fr_0.62fr]"
             >
-              <div className="flex flex-col justify-between gap-8 p-8 md:p-10">
+              <div className="flex flex-col justify-between gap-8 p-8 md:p-12 lg:p-16">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-white/60">
                     {slide.subtitle}
@@ -61,7 +61,7 @@ export default function HomePromoCarousel({ slides }: HomePromoCarouselProps) {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
-              <div className="relative min-h-[280px] bg-slate-800 sm:min-h-[360px]">
+              <div className="relative min-h-[280px] bg-slate-800 sm:min-h-[400px] lg:min-h-[460px]">
                 <Image
                   src={slide.image}
                   alt={slide.title}

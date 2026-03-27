@@ -2,120 +2,128 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Sparkles } from 'lucide-react'
-import { useMemo } from 'react'
-import type { MarketplaceProduct } from '@/components/home/types'
+import { ArrowRight, Users, Copy, Check } from 'lucide-react'
+import { useState } from 'react'
 
 type HomeHeroProps = {
-  heroProducts: MarketplaceProduct[]
+  heroProducts?: any[]
+  referralCode?: string
 }
 
-const copy = {
-  buy: {
-    headline: 'Find your next favorite piece before everyone else.',
-    body:
-      'Browse fresh vintage drops, campus-safe checkout, and image-first listings built to keep you scrolling.',
-    primaryLabel: 'Shop now',
-    primaryHref: '/shop',
-    secondaryLabel: 'Sell on Roorq',
-    secondaryHref: '/sell',
-  },
-  sell: {
-    headline: 'Turn your wardrobe into a marketplace-ready store.',
-    body:
-      'List faster, build your seller profile, and move inventory with a cleaner flow than generic resale apps.',
-    primaryLabel: 'Start selling',
-    primaryHref: '/sell',
-    secondaryLabel: 'See live listings',
-    secondaryHref: '/shop',
-  },
-} as const
+function ReferralButton({ referralCode }: { referralCode: string }) {
+  const [copied, setCopied] = useState(false)
 
-const fallbackImages = [
-  'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80',
-]
-
-export default function HomeHero({ heroProducts }: HomeHeroProps) {
-  const collage = useMemo(
-    () =>
-      fallbackImages.map((fallback, index) => ({
-        image: heroProducts[index]?.images?.[0] ?? fallback,
-        title: heroProducts[index]?.name ?? 'Roorq drop',
-      })),
-    [heroProducts]
-  )
-
-  const activeCopy = copy['buy']
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(referralCode)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // fallback
+    }
+  }
 
   return (
-    <section className="relative overflow-hidden border-b border-stone-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.95),_rgba(241,236,227,0.92)_42%,_rgba(232,229,244,0.9)_100%)]">
-      <div className="absolute inset-x-0 top-0 h-40 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),transparent)]" />
-      <div className="mx-auto grid max-w-[1440px] gap-12 px-4 py-10 sm:px-6 md:py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-16">
-        <div className="relative z-10">
-          <div className="mt-6 max-w-xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-stone-500">
-              <Sparkles className="h-3.5 w-3.5" />
-              Roorq marketplace
-            </p>
-            <h1 className="mt-5 text-4xl font-black tracking-[-0.06em] text-slate-950 sm:text-5xl lg:text-6xl">
-              {activeCopy.headline}
-            </h1>
-            <p className="mt-4 max-w-lg text-base leading-7 text-slate-600 sm:text-lg">
-              {activeCopy.body}
-            </p>
-          </div>
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-2 rounded-full border border-[#020617]/15 bg-white/80 px-7 py-3.5 text-sm font-semibold text-[#020617] shadow-sm backdrop-blur-sm transition hover:bg-white hover:shadow-md"
+    >
+      <Users className="h-4 w-4 text-[#020617]/60" />
+      Referral a Friend!
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-green-500" />
+      ) : (
+        <Copy className="h-3.5 w-3.5 text-[#020617]/40" />
+      )}
+    </button>
+  )
+}
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href={activeCopy.primaryHref}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:bg-slate-800"
-            >
-              {activeCopy.primaryLabel}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href={activeCopy.secondaryHref}
-              className="inline-flex items-center justify-center rounded-full border border-stone-300 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-white"
-            >
-              {activeCopy.secondaryLabel}
-            </Link>
-          </div>
+export default function HomeHero({ referralCode = 'ROORQ10' }: HomeHeroProps) {
+  return (
+    <section className="relative overflow-hidden border-b border-black/5" style={{ height: 'calc(100svh - 112px)' }}>
+
+      {/* ── Background gradient blobs ── */}
+      <div className="absolute inset-0 bg-[#FDFFFE]" />
+      <div className="absolute -left-32 -top-20 h-[520px] w-[520px] rounded-full bg-[#9EFF69] opacity-[0.22] blur-[100px]" />
+      <div className="absolute left-10 top-32 h-[300px] w-[360px] rounded-full bg-[#FFEB51] opacity-[0.15] blur-[90px]" />
+      <div className="absolute -right-20 -top-10 h-[400px] w-[400px] rounded-full bg-[#88E9FF] opacity-[0.18] blur-[100px]" />
+      <div className="absolute -bottom-20 -right-10 h-[480px] w-[480px] rounded-full bg-[#FF9CE1] opacity-[0.18] blur-[110px]" />
+      <div className="absolute -bottom-10 left-20 h-[320px] w-[380px] rounded-full bg-[#00FFB7] opacity-[0.12] blur-[90px]" />
+      <div className="absolute bottom-0 left-1/2 h-[280px] w-[500px] -translate-x-1/2 rounded-full bg-[#FFA7A7] opacity-[0.14] blur-[100px]" />
+
+      {/* ── Left panel — absolute, full left side ── */}
+      <div className="absolute left-0 top-0 bottom-0 hidden md:flex md:items-center w-[38%] lg:w-[36%] z-10">
+        <Image
+          src="/hero-left.png"
+          alt="Drop products left"
+          fill
+          priority
+          sizes="38vw"
+          className="object-contain object-left-top"
+        />
+      </div>
+
+      {/* ── Right panel — absolute, full right side ── */}
+      <div className="absolute right-0 top-0 bottom-0 hidden md:flex md:items-center w-[38%] lg:w-[36%] z-10">
+        <Image
+          src="/hero-right.png"
+          alt="Drop products right"
+          fill
+          priority
+          sizes="38vw"
+          className="object-contain object-right-top"
+        />
+      </div>
+
+      {/* ── Bottom panel — absolute, bottom center ── */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10 w-[180px] md:w-[220px] lg:w-[260px]">
+        <Image
+          src="/hero-bottom.png"
+          alt="Drop product bottom"
+          width={260}
+          height={190}
+          className="w-full h-auto object-contain"
+        />
+      </div>
+
+      {/* ── Center copy ── */}
+      <div className="relative z-20 flex h-full flex-col items-center justify-center px-4 pb-20 text-center">
+
+        {/* Handwriting tagline — matches Figma exactly */}
+        <p
+          className="mb-3 text-[#020617]/65"
+          style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 500, letterSpacing: '0.01em' }}
+        >
+          Roorq, Fashion Discovery Platform!
+        </p>
+
+        {/* Main headline */}
+        <h1
+          className="mx-auto font-black leading-[1.05] tracking-[-0.03em] text-[#020617]"
+          style={{ fontSize: 'clamp(2.4rem, 5vw, 3.8rem)', maxWidth: '14ch' }}
+        >
+          Where Style Becomes a Story.
+        </h1>
+
+        {/* Subtext — one clean line */}
+        <p className="mx-auto mt-5 max-w-[340px] text-[15px] leading-7 text-[#020617]/55 sm:max-w-[420px] sm:text-base">
+          India's first Story-Scored vintage marketplace.<br className="hidden sm:block" />
+          Campus-first. Drop model. IIT Roorkee.
+        </p>
+
+        {/* CTAs */}
+        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+          <Link
+            href="/shop"
+            className="inline-flex items-center gap-2.5 rounded-full bg-[#020617] px-9 py-4 text-sm font-bold text-white shadow-[0_8px_30px_rgba(2,6,23,0.25)] transition hover:-translate-y-0.5 hover:bg-[#0f172a] hover:shadow-[0_12px_36px_rgba(2,6,23,0.3)]"
+          >
+            Shop Now
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <ReferralButton referralCode={referralCode} />
         </div>
 
-        <div className="relative h-[320px] sm:h-[420px]">
-          <div className="absolute inset-0 rounded-[34px] bg-white/40 blur-3xl" />
-          {collage.map((item, index) => {
-            const cardClasses = [
-              'left-0 top-8 rotate-[-8deg]',
-              'left-[26%] top-0 rotate-[6deg]',
-              'right-0 top-10 rotate-[12deg]',
-            ]
-
-            return (
-              <article
-                key={`${item.title}-${index}`}
-                className={`absolute h-[250px] w-[44%] overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-[0_28px_50px_rgba(15,23,42,0.14)] sm:h-[320px] ${cardClasses[index]}`}
-              >
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  fill
-                  priority={index === 0}
-                  sizes="(max-width: 1024px) 40vw, 22vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(15,23,42,0.82))] px-4 pb-4 pt-10 text-white">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
-                    Trending now
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">{item.title}</p>
-                </div>
-              </article>
-            )
-          })}
-        </div>
       </div>
     </section>
   )

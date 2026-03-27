@@ -11,6 +11,8 @@ export type MarketplaceProduct = {
   sales_count: number | null
   stock_quantity: number | null
   reserved_quantity: number | null
+  hero_image: string | null
+  hero_position: number | null
 }
 
 export type StyleTile = {
