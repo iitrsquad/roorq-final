@@ -40,7 +40,7 @@ const buildAuthHref = (mode: 'signin' | 'signup', pathname: string) => {
 function NavbarFallback() {
   return (
     <header className="sticky top-0 z-50 border-b border-black/10 bg-white/95 backdrop-blur">
-      <div className="mx-auto hidden max-w-[1880px] lg:block">
+      <div className="mx-auto hidden max-w-full lg:block">
         <div className="flex h-[74px] items-center gap-8 px-6 xl:px-8">
           <div className="h-8 w-28 rounded bg-stone-100" />
           <div className="h-12 flex-1 rounded-full border border-stone-200 bg-stone-50" />
@@ -263,7 +263,7 @@ function NavbarContent() {
   return (
     <>
     <header className="sticky top-0 z-50 border-b border-black/10 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto max-w-[1880px]">
+      <div className="mx-auto max-w-full">
         <div className="relative flex h-16 items-center px-4 lg:hidden">
           <button type="button" onClick={() => { setIsMenuOpen(true); setIsUserMenuOpen(false); closeMegaMenu() }} className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white hover:bg-stone-50 ${focusRingClass}`} aria-label="Open navigation menu"><Menu className="h-5 w-5" /></button>
           <Link href="/" className={`absolute left-1/2 -translate-x-1/2 ${focusRingClass}`} aria-label="Roorq home">
